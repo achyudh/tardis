@@ -12,7 +12,8 @@ __pycache__/
 .mypy_cache/
 
 # data
-data/
+data/datasets/
+data/embedings/
 
 # IDE
 .idea/
