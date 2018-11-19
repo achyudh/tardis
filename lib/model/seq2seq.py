@@ -36,7 +36,7 @@ class Seq2Seq:
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
         print(model.summary())
 
-        # train
+        train
         model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
                     batch_size=batch_size,
                     epochs=epochs,

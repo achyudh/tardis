@@ -7,8 +7,6 @@ import numpy as np
 def load_data(path, source_lang, target_lang):
     data = pd.read_table(path, names=[source_lang, target_lang])
 
-    # TODO: don't truncate dataset
-    data = data[0:50000]
     print(data.shape)
 
     print(data.sample(10))
