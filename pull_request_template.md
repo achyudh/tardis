@@ -15,3 +15,4 @@
  ## Todo
 - [ ] Please add WIP tasks in this section
 - [ ] Ensure that the pull request title is of the format "WIP: Title" until all of these are checked
+- [ ] Remove this section from the pull request description if no pending tasks exist
