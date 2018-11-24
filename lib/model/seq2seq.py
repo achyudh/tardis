@@ -1,46 +1,43 @@
-from keras.models import Model
 from keras.layers import Input, LSTM, Embedding, Dense
-from keras.utils import plot_model
+from keras.models import Model
+
 
 class Seq2Seq:
-    def __init__(self, encoder_input_data, decoder_input_data, decoder_target_data, source_vocab_size, target_vocab_size, config):
-        # TODO: add multiple layers
-        embedding_dim = config.embedding_dim
-        hidden_dim = config.hidden_dim
+    def __init__(self, config):
+        # TODO: Add multiple layers
+        self.config = config
 
-        batch_size = config.batch_size
-        num_epochs = config.epochs
-
-        # encoder
+        # Encoder
         encoder_inputs = Input(shape=(None, ))
-        encoder_embedding = Embedding(source_vocab_size, embedding_dim)
-        encoder = LSTM(hidden_dim, return_state=True)
-
+        encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim)
+        encoder = LSTM(config.hidden_dim, return_state=True)
         encoder_embedded = encoder_embedding(encoder_inputs)
         _, state_h, state_c = encoder(encoder_embedded)
         encoder_states = [state_h, state_c]
 
-        # decoder
+        # Decoder
         decoder_inputs = Input(shape=(None, ))
-        decoder_embedding = Embedding(target_vocab_size, embedding_dim)
-        decoder = LSTM(hidden_dim, return_sequences=True, return_state=True)
-        decoder_dense = Dense(target_vocab_size, activation='softmax')
-
+        decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim)
+        decoder = LSTM(config.hidden_dim, return_sequences=True, return_state=True)
+        decoder_dense = Dense(config.target_vocab_size, activation='softmax')
         decoder_embedded = decoder_embedding(decoder_inputs)
-        decoder_outputs, _, _ = decoder(decoder_embedded, initial_state=encoder_states) # use the final encoder state as context
+        decoder_outputs, _, _ = decoder(decoder_embedded, initial_state=encoder_states)  # Use the final encoder state as context
         decoder_outputs = decoder_dense(decoder_outputs)
 
-        model = Model([encoder_inputs, decoder_inputs], decoder_outputs) # input: source and target sentence, output: predicted translation
+        # Input: Source and target sentence, Output: Predicted translation
+        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
 
-        # TODO: change optimizer
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['acc'])
-        print(model.summary())
+        # TODO: Change optimizer
+        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
+        print(self.model.summary())
 
-        # train
-        model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    validation_split=0.20)
+    def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
+        self.model.fit([encoder_train_input, decoder_train_input], decoder_train_target, batch_size=self.config.batch_size,
+                       epochs=self.config.epochs, validation_split=0.20)
+
+    def predict(self, encoder_predict_input, decoder_predict_input):
+        return self.model.predict([encoder_predict_input, decoder_predict_input])
+
 
 class TinySeq2Seq:
     def __init__(self, config):
