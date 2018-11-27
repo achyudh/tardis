@@ -17,7 +17,7 @@ def get_args():
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--save-path', type=str, default='data/checkpoints')
     parser.add_argument('--embedding-dim', type=int, default=300)
-    parser.add_argument('--embedding-mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
+    parser.add_argument('--embedding-mode', type=str, default='static', choices=['rand', 'static', 'non_static'])
     parser.add_argument('--embedding-path', help='embedding file path', default=os.path.join('data', 'embeddings', 'googlenews_300.bin'))
     parser.add_argument('--dataset-path', help='dataset directory', default=os.path.join('data', 'datasets'))
     parser.add_argument('--word-vectors-file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')
