@@ -1,5 +1,5 @@
 # Tardis
-### Seq2Seq Neural Machine Translation over PySpark
+> Seq2Seq Neural Machine Translation over PySpark
 
 An ensemble of the neural machine translation model from from Sequence to Sequence Learning with Neural Networks by Sutskever et al. [1] trained over PySpark using Elephas. We assess the effectiveness of our model on the EN-FR and EN-DE datasets from WMT-14.
 
