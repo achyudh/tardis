@@ -4,8 +4,6 @@ from keras.optimizers import SGD
 from keras.initializers import RandomUniform
 from keras.callbacks import LearningRateScheduler
 
-import numpy as np
-
 class Seq2Seq:
     def __init__(self, config):
         self.config = config
@@ -35,7 +33,7 @@ class Seq2Seq:
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
 
-        optimizer = SGD(lr=config.lr, momentum=0.0, clipnorm=25.) # decay?
+        optimizer = SGD(lr=config.lr, momentum=0.0, clipnorm=25.)
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         print(self.model.summary())
 
@@ -45,7 +43,7 @@ class Seq2Seq:
                 if epoch and epoch < 5:
                     return initial_lr
                 else: # decay after first 5 epochs
-                    return initial_lr * (decay_factor ** epoch)
+                    return initial_lr * (decay_factor ** epoch) # TODO: add step size
 
             return LearningRateScheduler(schedule, verbose=1)
 
