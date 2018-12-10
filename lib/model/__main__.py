@@ -29,10 +29,13 @@ if __name__ == '__main__':
     model_config.source_vocab_size = source_vocab_size
     model_config.target_vocab_size = target_vocab_size
 
-    if args.cpu:
-        model = TinySeq2Seq(args)
-    else:
-        model = Seq2Seq(model_config)
+    # if args.cpu:
+    #     model = TinySeq2Seq(args)
+    # else:
+    #     model = Seq2Seq(model_config)
+
+    model = Seq2Seq(model_config)
+    
     print(encoder_train_input.shape, decoder_train_input.shape, decoder_train_target.shape)
     model.train(encoder_train_input, decoder_train_input, decoder_train_target)
     # model.predict(encoder_train_input, decoder_train_input)
