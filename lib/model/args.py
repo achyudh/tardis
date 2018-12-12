@@ -9,7 +9,7 @@ def get_args():
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--epochs', type=int, default=7)
-    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--hidden-dim', type=int, default=1000)
     parser.add_argument('--num-layers', type=int, default=4)
     parser.add_argument('--lr', type=float, default=0.7)

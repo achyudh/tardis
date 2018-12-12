@@ -13,4 +13,4 @@ def preprocess(source_data, target_data):
     # Remove punctuation and digits
     source_data = source_data.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
     target_data = target_data.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
-    return source_data, target_data
+    return source_data.values.flatten(), target_data.values.flatten()

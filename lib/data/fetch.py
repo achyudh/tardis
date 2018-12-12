@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 
-from lib.data.utils import preprocess
+from lib.data.util import preprocess
 
 
 def en_de(path, reverse=False, splits='train'):
@@ -13,8 +13,8 @@ def en_de(path, reverse=False, splits='train'):
 
     if splits.lower() == 'train':
         # TODO: Replace one-got encoding with continuous vector representations to prevent memory errors
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=8000)
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=8000)
+        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=4000)
+        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=4000)
     elif splits.lower() == 'test':
         source_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % source_lang))
         target_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % target_lang))
@@ -65,5 +65,7 @@ def en_de(path, reverse=False, splits='train'):
             encoder_input_data[i, j] = source_word_idx[word]
         for j, word in enumerate(target_sent.split()):
             decoder_input_data[i, j] = target_word_idx[word]
-            # TODO: Shift target by 1
+            if j > 0:
+                decoder_target_data[i, j - 1, target_word_idx[word]] = 1
+
     return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab_size, target_vocab_size
