@@ -33,6 +33,7 @@ if __name__ == '__main__':
         model = TinySeq2Seq(args)
     else:
         model = Seq2Seq(model_config)
+
     print(encoder_train_input.shape, decoder_train_input.shape, decoder_train_target.shape)
     model.train(encoder_train_input, decoder_train_input, decoder_train_target)
     # model.predict(encoder_train_input, decoder_train_input)
