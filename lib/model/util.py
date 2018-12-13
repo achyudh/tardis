@@ -1,15 +1,21 @@
 import numpy as np
-import gensim
+import codecs
+from tqdm import tqdm
 
 
-def embedding_matrix(word_index, model_path='data/embeddings/word/googlenews_size300.bin', binary=True):
-    if binary:
-        size = int(model_path.split('.')[-2].split('/')[-1].split('_')[1][4:])
-    else:
-        size = int(model_path.split('/')[-1].split('_')[1][4:])
-    w2v = gensim.models.KeyedVectors.load_word2vec_format(model_path, binary)
-    embedding_map = np.zeros((len(word_index) + 1, size))
+def embedding_matrix(model_path, vocab, embed_dim=300):
+    embed_index = dict()
+    with codecs.open(model_path, encoding='utf-8') as embedding_file:
+        for line in tqdm(embedding_file):
+            values = line.rstrip().rsplit(' ')
+            word = values[0]
+            coefs = np.asarray(values[1:], dtype='float32')
+            embed_index[word] = coefs
+
+    word_index = dict([(word, id) for id, word in enumerate(vocab)])
+    embed_matrix = np.zeros((len(word_index), embed_dim))
     for word, i in word_index.items():
-        if word in w2v:
-            embedding_map[i] = w2v[word]
-    return embedding_map
+        embedding_vector = embed_index.get(word)
+        if (embedding_vector is not None) and len(embedding_vector) > 0:
+            embed_matrix[i] = embedding_vector
+    return embed_matrix
