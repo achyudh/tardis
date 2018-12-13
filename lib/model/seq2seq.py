@@ -1,4 +1,4 @@
-from keras.layers import Input, LSTM, Embedding, Dense
+from keras.layers import Input, LSTM, Embedding, Dense, Activation
 from keras.models import Model
 from keras.optimizers import SGD
 from keras.initializers import RandomUniform
@@ -14,7 +14,8 @@ class Seq2Seq:
         # Encoder
         initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=config.seed)
         encoder_inputs = Input(shape=(None, ))
-        encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim)
+        encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
+                                      weights=[config.source_embedding_map], trainable=False)
         encoder_embedded = encoder_embedding(encoder_inputs)
         encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
         for i in range(1, config.num_layers):
@@ -24,7 +25,8 @@ class Seq2Seq:
 
         # Decoder
         decoder_inputs = Input(shape=(None, ))
-        decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim)
+        decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
+                                      weights=[config.target_embedding_map], trainable=False)
         decoder_embedded = decoder_embedding(decoder_inputs)
         decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)
         for i in range(1, config.num_layers):
