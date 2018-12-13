@@ -4,7 +4,7 @@ from keras.optimizers import SGD
 from keras.initializers import RandomUniform
 from keras.callbacks import LearningRateScheduler
 
-from lib.model.util import bleu_score, multi_bleu_score
+from lib.model.metrics import bleu_score, multi_bleu_score
 
 
 class Seq2Seq:
