@@ -4,6 +4,9 @@ from keras.optimizers import SGD
 from keras.initializers import RandomUniform
 from keras.callbacks import LearningRateScheduler
 
+from lib.model.util import bleu_score, multi_bleu_score
+
+
 class Seq2Seq:
     def __init__(self, config):
         self.config = config
@@ -43,7 +46,7 @@ class Seq2Seq:
                 if epoch and epoch < 5:
                     return initial_lr
                 else: # decay after first 5 epochs
-                    return initial_lr * (decay_factor ** epoch) # TODO: add step size
+                    return initial_lr * (decay_factor ** epoch)  # TODO: add step size
 
             return LearningRateScheduler(schedule, verbose=1)
 
@@ -52,13 +55,19 @@ class Seq2Seq:
             ]
 
         self.model.fit([encoder_train_input, decoder_train_input], decoder_train_target,
-                        batch_size=self.config.batch_size,
+                       batch_size=self.config.batch_size,
                        epochs=self.config.epochs,
                        validation_split=0.20,
                        callbacks=callbacks)
 
     def predict(self, encoder_predict_input, decoder_predict_input):
         return self.model.predict([encoder_predict_input, decoder_predict_input])
+
+    def evaluate(self, encoder_predict_input, decoder_predict_input, decoder_train_target):
+        y_pred = self.model.predict([encoder_predict_input, decoder_predict_input])
+        print("BLEU Score:", bleu_score(y_pred, decoder_train_target, self.config.target_vocab))
+        # An error in the sacrebleu library prevents multi_bleu_score from working on WMT '14 EN-DE test split
+        # print("BLEU Score", multi_bleu_score(y_pred, self.config.target_vocab, self.config.dataset))
 
 
 class TinySeq2Seq:
