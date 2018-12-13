@@ -1,21 +1,15 @@
-import sacrebleu
-from nltk.translate.bleu_score import SmoothingFunction, corpus_bleu
-
-from lib.data.util import reverse_indexing
+import numpy as np
+import gensim
 
 
-def bleu_score(reference, candidate, target_vocab):
-    # TODO: Find a workaround for Keras metric API limitation
-    reference = reverse_indexing(reference, target_vocab)
-    candidate = reverse_indexing(candidate, target_vocab)
-    return corpus_bleu(reference, candidate, smoothing_function=SmoothingFunction().method4)
-
-
-def multi_bleu_score(candidate, target_vocab, dataset):
-    lang_pair = '-'.join(dataset.split('_'))
-    candidate = reverse_indexing(candidate, target_vocab)
-    _, *refs = sacrebleu.download_test_set('wmt14', lang_pair)
-    bleu = sacrebleu.corpus_bleu(candidate, refs)
-    return bleu.score
-
-
+def embedding_matrix(word_index, model_path='data/embeddings/word/googlenews_size300.bin', binary=True):
+    if binary:
+        size = int(model_path.split('.')[-2].split('/')[-1].split('_')[1][4:])
+    else:
+        size = int(model_path.split('/')[-1].split('_')[1][4:])
+    w2v = gensim.models.KeyedVectors.load_word2vec_format(model_path, binary)
+    embedding_map = np.zeros((len(word_index) + 1, size))
+    for word, i in word_index.items():
+        if word in w2v:
+            embedding_map[i] = w2v[word]
+    return embedding_map
