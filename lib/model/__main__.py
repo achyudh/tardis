@@ -42,6 +42,7 @@ if __name__ == '__main__':
     model_config.target_embedding_map = target_embedding_map
 
     training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
+    # TODO: Create a separate validation split for the validation generator
     # validation_generator = WMTSequence(encoder_test_input, decoder_test_input, decoder_test_target, model_config)
 
     if args.cpu:
