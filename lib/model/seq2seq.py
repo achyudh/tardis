@@ -1,11 +1,10 @@
-from keras.layers import Input, LSTM, Embedding, Dense, Activation
+from keras.layers import Input, LSTM, Embedding, Dense, Activation, Bidirectional, Concatenate
 from keras.models import Model
 from keras.optimizers import SGD
 from keras.initializers import RandomUniform
 from keras.callbacks import LearningRateScheduler
 
 from lib.model.metrics import bleu_score, multi_bleu_score
-
 
 class Seq2Seq:
     def __init__(self, config):
@@ -17,20 +16,20 @@ class Seq2Seq:
         encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
                                       weights=[config.source_embedding_map], trainable=False)
         encoder_embedded = encoder_embedding(encoder_inputs)
-        encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
+        encoder = Bidirectional(LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights), merge_mode='concat')(encoder_embedded)
         for i in range(1, config.num_layers):
-            encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
-        _, state_h, state_c = encoder
-        encoder_states = [state_h, state_c]
+            encoder = Bidirectional(LSTM(config.hidden_dim, return_state=True, return_sequences=True), merge_mode='concat')(encoder)
+        encoder_outputs, forward_h, forward_c, backward_h, backward_c = encoder
+        encoder_states = [Concatenate()([forward_h, backward_h]), Concatenate()([forward_c, backward_c])]
 
         # Decoder
         decoder_inputs = Input(shape=(None, ))
         decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
                                       weights=[config.target_embedding_map], trainable=False)
         decoder_embedded = decoder_embedding(decoder_inputs)
-        decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)
+        decoder = LSTM(config.hidden_dim * 2, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
         for i in range(1, config.num_layers):
-            decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+            decoder = LSTM(config.hidden_dim * 2, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
         decoder_outputs, _, _ = decoder
         decoder_dense = Dense(config.target_vocab_size, activation='softmax')
         decoder_outputs = decoder_dense(decoder_outputs)

@@ -1,10 +1,16 @@
 import os
 from copy import deepcopy
 
+from elephas.spark_model import SparkModel
+
+from pyspark import SparkContext, SparkConf
+
 from lib.data import fetch
 from lib.model.util import embedding_matrix
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq, TinySeq2Seq
+
+root_dir = os.getcwd()
 
 if __name__ == '__main__':
     # Select GPU based on args
@@ -44,6 +50,12 @@ if __name__ == '__main__':
         model = TinySeq2Seq(args)
     else:
         model = Seq2Seq(model_config)
+
+    if args.ensemble:
+        # TODO: increase number of workers and set master
+        conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
+        sc = SparkContext(conf=conf).addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
+        model = SparkModel(model, frequency='epoch') # Distributed ensemble
 
     model.train(encoder_train_input, decoder_train_input, decoder_train_target)
     model.evaluate(encoder_train_input, decoder_train_input, decoder_train_target)

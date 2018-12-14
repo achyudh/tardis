@@ -1,0 +1,10 @@
+from setuptools import setup
+
+setup(name='tardis',
+      version='0.0.1',
+      description='Seq2Seq for NMT Ensemble',
+      url='https://github.com/achyudhk/Tardis',
+      author=['achyudhk', 'zeynepakkalyoncu'],
+      author_email=['arkeshavram@uwaterloo.ca', 'zakkalyoncu@uwaterloo.ca'],
+      packages=['lib'],
+      zip_safe=False)
