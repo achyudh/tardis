@@ -7,15 +7,15 @@ from lib.data.util import preprocess, replace_unknown
 from lib.data import vocab
 
 
-def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, splits='train'):
+def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False, splits='train'):
     if reverse:
         source_lang, target_lang = 'de', 'en'
     else:
         source_lang, target_lang = 'en', 'de'
 
     if splits.lower() == 'train':
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=10000)
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=10000)
+        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=8000)
+        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=8000)
     elif splits.lower() == 'test':
         source_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % source_lang))
         target_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % target_lang))
@@ -47,7 +47,10 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
     print("Target", splits, "split size:", len(target_data))
     encoder_input_data = np.zeros((num_instances, max_source_len), dtype=np.float64)
     decoder_input_data = np.zeros((num_instances, max_target_len), dtype=np.float64)
-    decoder_target_data = np.zeros((num_instances, max_target_len, target_vocab_size), dtype=np.float64)
+    if one_hot:
+        decoder_target_data = np.zeros((num_instances, max_target_len, target_vocab_size), dtype=np.float64)
+    else:
+        decoder_target_data = np.zeros((num_instances, max_target_len), dtype=np.float64)
 
     # Convert words to ids
     for i, (source_sent, target_sent) in enumerate(zip(source_data, target_data)):
@@ -56,5 +59,8 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
         for j, word in enumerate(nltk.word_tokenize(target_sent)):
             decoder_input_data[i, j] = target_vocab[word]
             if j > 0:
-                decoder_target_data[i, j - 1, target_vocab[word]] = 1
+                if one_hot:
+                    decoder_target_data[i, j - 1, target_vocab[word]] = 1
+                else:
+                    decoder_target_data[i, j - 1] = target_vocab[word]
     return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
