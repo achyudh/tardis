@@ -55,9 +55,7 @@ if __name__ == '__main__':
         # TODO: increase number of workers and set master
         conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
         sc = SparkContext(conf=conf).addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
-
         model = SparkModel(model, frequency='epoch') # Distributed ensemble
 
-    print(encoder_train_input.shape, decoder_train_input.shape, decoder_train_target.shape)
     model.train(encoder_train_input, decoder_train_input, decoder_train_target)
     model.evaluate(encoder_train_input, decoder_train_input, decoder_train_target)
