@@ -10,10 +10,13 @@ An ensemble of the neural machine translation model from from Sequence to Sequen
 
 ## Getting started
 * Download the en_de dataset from https://nlp.stanford.edu/projects/nmt/ and move it to `data/datasets/en_de`. Similarly, the en_fr dataset from http://statmt.org/wmt14/translation-task.html should be placed in `data/datasets/en_fr.
+* Download the English, German and French embeddings from https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.vec, https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.de.vec and https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.fr.vec respectively
 * To run the single node Seq2Seq model on a GPU, issue the following command from the project root directory:
   - `python -m lib.model --gpu <gpu_no> --dataset <lang_pair> --batch-size <batch_size>`
 * To run the single node TinySeq2Seq model on a CPU, issue the following command from the project root directory:
   - `python -m lib.model --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
+* To run the TinySeq2Seq ensemble on multiple nodes, issue the following command from the project root directory: (WIP)
+  - `spark-submit --driver-memory 1G -m lib/model/__main__.py --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
 
 ## References
 
