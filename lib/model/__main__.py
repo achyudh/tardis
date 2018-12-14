@@ -1,6 +1,14 @@
 import os
 from copy import deepcopy
 
+from elephas.spark_model import SparkModel
+
+from pyspark import SparkContext, SparkConf
+
+# TODO: increase number of workers and set master
+conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
+sc = SparkContext(conf=conf).addFile(path='tardis.egg')
+
 from lib.data import fetch
 from lib.model.util import embedding_matrix
 from lib.model.args import get_args
@@ -44,6 +52,9 @@ if __name__ == '__main__':
         model = TinySeq2Seq(args)
     else:
         model = Seq2Seq(model_config)
+
+    if args.ensemble:
+        model = SparkModel(model, frequency='epoch') # Distributed ensemble
 
     print(encoder_train_input.shape, decoder_train_input.shape, decoder_train_target.shape)
     model.train(encoder_train_input, decoder_train_input, decoder_train_target)
