@@ -1,74 +1,60 @@
 import numpy as np
 import pandas as pd
+import nltk
 import os
 
-from lib.data.util import preprocess,reverse_indexing
+from lib.data.util import preprocess, replace_unknown
+from lib.data import vocab
 
 
-def en_de(path, source_vocab=None, target_vocab=None, reverse=False, splits='train'):
+def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, splits='train'):
     if reverse:
         source_lang, target_lang = 'de', 'en'
     else:
         source_lang, target_lang = 'en', 'de'
 
     if splits.lower() == 'train':
-        # TODO: Replace one-got encoding with continuous vector representations to prevent memory errors
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=3000)
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=3000)
+        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang)).head(n=10000)
+        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang)).head(n=10000)
     elif splits.lower() == 'test':
         source_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % source_lang))
         target_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % target_lang))
     else:
         raise Exception("Unsupported dataset splits")
 
-    print("Dataset size:", source_data.shape, target_data.shape)
-
-    replace_unk = True if (target_vocab is not None or source_vocab is not None) else False
-    source_data, target_data = preprocess(source_data, target_data, source_vocab, target_vocab, replace_unk)
-    num_instances = len(source_data)
-
-    # TODO: Tokenize using NLTK
+    source_data, target_data = preprocess(source_data, target_data)
     if source_vocab is None:
         # Create source vocabulary
-        source_vocab = set()
-        source_vocab.add('UNK')
-        for source_line in source_data:
-            for word in source_line.split():
-                if word not in source_vocab:
-                    source_vocab.add(word)
-        source_vocab = sorted(list(source_vocab))
+        source_vocab = vocab.build(source_data, max_size=10000)
+        print("Source vocabulary size:", len(source_vocab))
 
     if target_vocab is None:
         # Create target vocabulary
-        target_vocab = set()
-        target_vocab.add('UNK')
-        for target_line in target_data:
-            for word in target_line.split():
-                if word not in target_vocab:
-                    target_vocab.add(word)
-        target_vocab = sorted(list(target_vocab))
+        target_vocab = vocab.build(target_data, max_size=10000)
+        print("Target vocabulary size:", len(target_vocab))
 
-    target_len_list = [len(sent.split(' ')) for sent in target_data]
-    max_target_len = np.max(target_len_list)
-    source_len_list = [len(sent.split(' ')) for sent in source_data]
-    max_source_len = np.max(source_len_list)
+    if replace_unk:
+        source_data = [replace_unknown(x, source_vocab) for x in source_data]
+        target_data = [replace_unknown(x, target_vocab) for x in target_data]
+
+    max_target_len = max(len(nltk.word_tokenize(sent)) for sent in target_data)
+    max_source_len = max(len(nltk.word_tokenize(sent)) for sent in source_data)
     target_vocab_size = len(target_vocab)
 
-    # TODO: Use dict comprehension instead
-    source_word_idx = dict([(word, id) for id, word in enumerate(source_vocab)])
-    target_word_idx = dict([(word, id) for id, word in enumerate(target_vocab)])  # EOS: 0, SOS: 1
-
     # TODO: Pickle vocab
+    num_instances = len(source_data)
+    print("Source", splits, "split size:", len(source_data))
+    print("Target", splits, "split size:", len(target_data))
     encoder_input_data = np.zeros((num_instances, max_source_len), dtype=np.float64)
     decoder_input_data = np.zeros((num_instances, max_target_len), dtype=np.float64)
     decoder_target_data = np.zeros((num_instances, max_target_len, target_vocab_size), dtype=np.float64)
 
     # Convert words to ids
     for i, (source_sent, target_sent) in enumerate(zip(source_data, target_data)):
-        for j, word in enumerate(source_sent.split()):
-            encoder_input_data[i, j] = source_word_idx[word]
-        for j, word in enumerate(target_sent.split()):
-            decoder_input_data[i, j] = target_word_idx[word]
+        for j, word in enumerate(nltk.word_tokenize(source_sent)):
+            encoder_input_data[i, j] = source_vocab[word]
+        for j, word in enumerate(nltk.word_tokenize(target_sent)):
+            decoder_input_data[i, j] = target_vocab[word]
             if j > 0:
-                decoder_target_data[i, j - 1, target_word_idx[word]] = 1
+                decoder_target_data[i, j - 1, target_vocab[word]] = 1
     return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
