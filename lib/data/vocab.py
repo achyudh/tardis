@@ -17,5 +17,4 @@ def build(lines, max_size=None):
         vocab = sorted(vocab.keys(), key=lambda x: vocab[x], reverse=True)
     else:
         vocab = sorted(vocab.keys(), key=lambda x: vocab[x], reverse=True)[:max_size]
-    print(vocab[:20])
     return {word: id for id, word in enumerate(vocab)}

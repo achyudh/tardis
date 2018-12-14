@@ -10,6 +10,7 @@ def embedding_matrix(model_path, vocab, embed_dim=300):
     file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450}
     if model_path not in file_sizes:
         Exception("Unsupported embedding file")
+    print("Loading embedding matrix from:", os.path.basename(model_path))
 
     with codecs.open(model_path, encoding='utf-8') as embedding_file:
         for line in tqdm(embedding_file, total=file_sizes[os.path.basename(model_path)]):
