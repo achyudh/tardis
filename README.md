@@ -9,8 +9,13 @@ An ensemble of the neural machine translation model from from Sequence to Sequen
 * Pandas >= 0.23.4
 
 ## Getting started
-* Download the en_de dataset from https://nlp.stanford.edu/projects/nmt/ and move it to `data/datasets/en_de`. Similarly, the en_fr dataset from http://statmt.org/wmt14/translation-task.html should be placed in `data/datasets/en_fr.
-* Download the English, German and French embeddings from https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.vec, https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.de.vec and https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.fr.vec respectively
+* Download the en_de dataset under `data/datasets/en_de`:
+  * Download [train.en](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/train.en) and [train.de](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/train.de)
+  * Download [newstest2012.en](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/newstest2012.en), [newstest2012.de](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/newstest2012.de), [newstest2015.en](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/newstest2015.en) and [newstest2015.de](https://nlp.stanford.edu/projects/nmt/data/wmt14.en-de/newstest2015.de)
+* Repeat the same process for the en_ve dataset under `data/datasets/en_vi`
+
+* Download the FastText WikiText embeddings for [English](https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.vec), [German](https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.de.vec) and [Viatnamese](https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.vi.vec)
+
 * To run the single node Seq2Seq model on a GPU, issue the following command from the project root directory:
   - `python -m lib.model --gpu <gpu_no> --dataset <lang_pair> --batch-size <batch_size>`
 * To run the single node TinySeq2Seq model on a CPU, issue the following command from the project root directory:
