@@ -18,11 +18,11 @@ if __name__ == '__main__':
     # Select GPU based on args
     args = get_args()
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
     if args.dataset == 'en_de':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path)
+            fetch.en_de(args.dataset_path, vocab_size=args.vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
@@ -32,17 +32,17 @@ if __name__ == '__main__':
 
     elif args.dataset == 'de_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, reverse=True)
+            fetch.en_de(args.dataset_path, vocab_size=args.vocab_size, reverse_lang=True)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, source_vocab, target_vocab, reverse=True, splits='dev')
+            fetch.en_de(args.dataset_path, source_vocab, target_vocab, reverse_lang=True, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse=True, splits='test')
+            fetch.en_de(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse_lang=True, splits='test')
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.de.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), target_vocab)
 
     elif args.dataset == 'en_vi':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path)
+            fetch.en_vi(args.dataset_path, vocab_size=args.vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     elif args.dataset == 'vi_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, reverse=True)
+            fetch.en_vi(args.dataset_path, vocab_size=args.vocab_size, reverse=True)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, reverse=True, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
@@ -70,6 +70,7 @@ if __name__ == '__main__':
     model_config = deepcopy(args)
     source_vocab_size = len(source_vocab)
     target_vocab_size = len(target_vocab)
+    model_config.devices = args.devices.split(',')
     model_config.source_vocab = source_vocab
     model_config.target_vocab = target_vocab
     model_config.source_vocab_size = source_vocab_size
