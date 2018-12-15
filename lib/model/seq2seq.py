@@ -1,40 +1,43 @@
-from keras.layers import Input, LSTM, Embedding, Dense, Activation, Bidirectional, Concatenate
+import tensorflow as tf
+from keras.initializers import RandomUniform
+from keras.layers import Input, LSTM, Embedding, Dense
 from keras.models import Model
 from keras.optimizers import SGD
-from keras.initializers import RandomUniform
-from keras.callbacks import LearningRateScheduler
 
-from lib.model.metrics import bleu_score, multi_bleu_score
+from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
 
 class Seq2Seq:
     def __init__(self, config):
         self.config = config
+        devices = list('/gpu:' + x for x in config.devices)
 
         # Encoder
-        initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=config.seed)
-        encoder_inputs = Input(shape=(None, ))
-        encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
-                                      weights=[config.source_embedding_map], trainable=False)
-        encoder_embedded = encoder_embedding(encoder_inputs)
-        encoder = Bidirectional(LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights), merge_mode='concat')(encoder_embedded)
-        for i in range(1, config.num_layers):
-            encoder = Bidirectional(LSTM(config.hidden_dim, return_state=True, return_sequences=True), merge_mode='concat')(encoder)
-        encoder_outputs, forward_h, forward_c, backward_h, backward_c = encoder
-        encoder_states = [Concatenate()([forward_h, backward_h]), Concatenate()([forward_c, backward_c])]
+        with tf.device(devices[0]):
+            initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=config.seed)
+            encoder_inputs = Input(shape=(None, ))
+            encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
+                                          weights=[config.source_embedding_map], trainable=False)
+            encoder_embedded = encoder_embedding(encoder_inputs)
+            encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
+            for i in range(1, config.num_layers):
+                encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
+            _, state_h, state_c = encoder
+            encoder_states = [state_h, state_c]
 
         # Decoder
-        decoder_inputs = Input(shape=(None, ))
-        decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
-                                      weights=[config.target_embedding_map], trainable=False)
-        decoder_embedded = decoder_embedding(decoder_inputs)
-        decoder = LSTM(config.hidden_dim * 2, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
-        for i in range(1, config.num_layers):
-            decoder = LSTM(config.hidden_dim * 2, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
-        decoder_outputs, _, _ = decoder
-        decoder_dense = Dense(config.target_vocab_size, activation='softmax')
-        decoder_outputs = decoder_dense(decoder_outputs)
+        with tf.device(devices[1]):
+            decoder_inputs = Input(shape=(None, ))
+            decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
+                                          weights=[config.target_embedding_map], trainable=False)
+            decoder_embedded = decoder_embedding(decoder_inputs)
+            decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)
+            for i in range(1, config.num_layers):
+                decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+            decoder_outputs, _, _ = decoder
+            decoder_dense = Dense(config.target_vocab_size, activation='softmax')
+            decoder_outputs = decoder_dense(decoder_outputs)
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)

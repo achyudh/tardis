@@ -1,6 +1,10 @@
-import numpy as np
-import nltk
+import os
 
+import dill
+import nltk
+import swifter
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 
@@ -19,6 +23,23 @@ def preprocess(source_data, target_data):
 
     source_data = source_data.values.flatten()
     target_data = target_data.values.flatten()
+    return source_data, target_data
+
+
+def load_dataset(source_data_path, target_data_path):
+    if os.path.isfile(source_data_path + '.pkl') and os.path.isfile(target_data_path + '.pkl'):
+        with open(source_data_path + '.pkl', 'rb') as pkl_file:
+            source_data = dill.load(pkl_file)
+        with open(target_data_path + '.pkl', 'rb') as pkl_file:
+            target_data = dill.load(pkl_file)
+    else:
+        source_data = pd.read_table(source_data_path)
+        target_data = pd.read_table(target_data_path)
+        source_data, target_data = preprocess(source_data, target_data)
+        with open(source_data_path + '.pkl', 'wb') as pkl_file:
+            dill.dump(source_data, pkl_file)
+        with open(target_data_path + '.pkl', 'wb') as pkl_file:
+            dill.dump(target_data, pkl_file)
     return source_data, target_data
 
 
@@ -47,7 +68,7 @@ def build_indices(source_data, target_data, source_vocab, target_vocab, one_hot)
 
     # Convert words to ids
     for i, (source_sent, target_sent) in tqdm(enumerate(zip(source_data, target_data)), total=len(source_data)):
-        for j, word in enumerate(nltk.word_tokenize(source_sent)):
+        for j, word in enumerate(reversed(nltk.word_tokenize(source_sent))):
             encoder_input_data[i, j] = source_vocab[word]
         for j, word in enumerate(nltk.word_tokenize(target_sent)):
             decoder_input_data[i, j] = target_vocab[word]
