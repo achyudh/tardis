@@ -19,9 +19,9 @@ def lr_scheduler(initial_lr, decay_factor):
 
 
 def embedding_matrix(model_path, vocab, embed_dim=300):
-    if os.path.isfile(model_path + '.cache'):
-        with open(model_path + '.cache', 'rb') as pkl_file:
-            return dill.load(pkl_file)
+    if os.path.isfile(model_path + '.pkl'):
+        with open(model_path + '.pkl', 'rb') as pkl_file:
+            embed_index = dill.load(pkl_file)
     else:
         embed_index = dict()
         file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450, 'wiki.vi.vec': 292169}
@@ -34,11 +34,12 @@ def embedding_matrix(model_path, vocab, embed_dim=300):
                 coefs = np.asarray(values[1:], dtype='float32')
                 embed_index[word] = coefs
 
-        embed_matrix = np.zeros((len(vocab), embed_dim))
-        for word, i in vocab.items():
-            embedding_vector = embed_index.get(word)
-            if (embedding_vector is not None) and len(embedding_vector) > 0:
-                embed_matrix[i] = embedding_vector
-        with open(model_path + '.cache', 'wb') as pkl_file:
-            dill.dump(embed_matrix, pkl_file)
-        return embed_matrix
+        with open(model_path + '.pkl', 'wb') as pkl_file:
+            dill.dump(embed_index, pkl_file)
+
+    embed_matrix = np.zeros((len(vocab), embed_dim))
+    for word, i in vocab.items():
+        embedding_vector = embed_index.get(word)
+        if (embedding_vector is not None) and len(embedding_vector) > 0:
+            embed_matrix[i] = embedding_vector
+    return embed_matrix
