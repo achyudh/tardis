@@ -2,12 +2,25 @@ import codecs
 import os
 
 import numpy as np
+from keras.callbacks import LearningRateScheduler
 from tqdm import tqdm
+
+
+def lr_scheduler(initial_lr, decay_factor):
+    def schedule(epoch):
+        if epoch and epoch < 5:
+            return initial_lr
+        else:
+            # Decay after first 5 epochs
+            # TODO: Add step size
+            return initial_lr * (decay_factor ** epoch)
+
+    return LearningRateScheduler(schedule, verbose=1)
 
 
 def embedding_matrix(model_path, vocab, embed_dim=300):
     embed_index = dict()
-    file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450}
+    file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450, 'wiki.vi.vec': 292169}
     if model_path not in file_sizes:
         Exception("Unsupported embedding file")
     print("Loading embedding matrix from:", os.path.basename(model_path))
