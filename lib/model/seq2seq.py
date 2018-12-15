@@ -7,6 +7,7 @@ from keras.callbacks import LearningRateScheduler
 from lib.model.metrics import bleu_score, multi_bleu_score
 from lib.model.util import lr_scheduler
 
+
 class Seq2Seq:
     def __init__(self, config):
         self.config = config
@@ -60,7 +61,7 @@ class Seq2Seq:
 
     def evaluate(self, encoder_predict_input, decoder_predict_input, decoder_train_target):
         y_pred = self.model.predict([encoder_predict_input, decoder_predict_input])
-        print("BLEU Score:", bleu_score(y_pred, decoder_train_target, self.config.target_vocab))
+        print("BLEU Score:", bleu_score(y_pred, decoder_train_target))
         # An error in the sacrebleu library prevents multi_bleu_score from working on WMT '14 EN-DE test split
         # print("BLEU Score", multi_bleu_score(y_pred, self.config.target_vocab, self.config.dataset))
 

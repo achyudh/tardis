@@ -19,13 +19,14 @@ def lr_scheduler(initial_lr, decay_factor):
 
 
 def embedding_matrix(model_path, vocab, embed_dim=300):
+    print("Loading embedding matrix from:", os.path.basename(model_path))
+
     if os.path.isfile(model_path + '.pkl'):
         with open(model_path + '.pkl', 'rb') as pkl_file:
             embed_index = dill.load(pkl_file)
     else:
         embed_index = dict()
         file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450, 'wiki.vi.vec': 292169}
-        print("Loading embedding matrix from:", os.path.basename(model_path))
 
         with codecs.open(model_path, encoding='utf-8') as embedding_file:
             for line in tqdm(embedding_file, total=file_sizes[os.path.basename(model_path)]):
