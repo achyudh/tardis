@@ -44,7 +44,7 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
-    encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data, source_data,
+    encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data, source_vocab,
                                                                                 target_vocab, one_hot)
 
     return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
