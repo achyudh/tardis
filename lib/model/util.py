@@ -1,23 +1,42 @@
 import codecs
 import os
-
+import dill
 import numpy as np
+from keras.callbacks import LearningRateScheduler
 from tqdm import tqdm
 
 
+def lr_scheduler(initial_lr, decay_factor):
+    def schedule(epoch):
+        if epoch and epoch < 5:
+            return initial_lr
+        else:
+            # Decay after first 5 epochs
+            # TODO: Add step size
+            return initial_lr * (decay_factor ** epoch)
+
+    return LearningRateScheduler(schedule, verbose=1)
+
+
 def embedding_matrix(model_path, vocab, embed_dim=300):
-    embed_index = dict()
-    file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450}
-    if model_path not in file_sizes:
-        Exception("Unsupported embedding file")
     print("Loading embedding matrix from:", os.path.basename(model_path))
 
-    with codecs.open(model_path, encoding='utf-8') as embedding_file:
-        for line in tqdm(embedding_file, total=file_sizes[os.path.basename(model_path)]):
-            values = line.rstrip().rsplit(' ')
-            word = values[0]
-            coefs = np.asarray(values[1:], dtype='float32')
-            embed_index[word] = coefs
+    if os.path.isfile(model_path + '.pkl'):
+        with open(model_path + '.pkl', 'rb') as pkl_file:
+            embed_index = dill.load(pkl_file)
+    else:
+        embed_index = dict()
+        file_sizes = {'wiki.en.vec': 2519428, 'wiki.de.vec': 2275261, 'wiki.fr.vec': 1152450, 'wiki.vi.vec': 292169}
+
+        with codecs.open(model_path, encoding='utf-8') as embedding_file:
+            for line in tqdm(embedding_file, total=file_sizes[os.path.basename(model_path)]):
+                values = line.rstrip().rsplit(' ')
+                word = values[0]
+                coefs = np.asarray(values[1:], dtype='float32')
+                embed_index[word] = coefs
+
+        with open(model_path + '.pkl', 'wb') as pkl_file:
+            dill.dump(embed_index, pkl_file)
 
     embed_matrix = np.zeros((len(vocab), embed_dim))
     for word, i in vocab.items():
