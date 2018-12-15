@@ -9,6 +9,7 @@ def get_args():
     parser = ArgumentParser(description="Seq2Seq models for Neural Machine Translation (NMT)")
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--ensemble', type=bool, default=False)
     parser.add_argument('--epochs', type=int, default=7)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--hidden-dim', type=int, default=1000)
