@@ -40,7 +40,7 @@ if __name__ == '__main__':
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.de.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), target_vocab)
 
-    if args.dataset == 'en_vi':
+    elif args.dataset == 'en_vi':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
