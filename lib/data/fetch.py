@@ -1,41 +1,37 @@
-import os
-
-import dill
-import swifter
-
-import pandas as pd
-
 from lib.data import vocab
 from lib.data.util import *
 
 
-def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False, splits='train'):
-    if reverse:
+def en_de(path, source_vocab=None, target_vocab=None, reverse_lang=False, replace_unk=True, one_hot=False,
+          vocab_size=None, splits='train'):
+
+    if reverse_lang:
         source_lang, target_lang = 'de', 'en'
     else:
         source_lang, target_lang = 'en', 'de'
 
     if splits.lower() == 'train':
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % source_lang))
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'train.%s' % target_lang))
+        source_data_path = os.path.join(path, 'en_de', 'train.%s' % source_lang)
+        target_data_path = os.path.join(path, 'en_de', 'train.%s' % target_lang)
     elif splits.lower() == 'dev':
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'test12.%s' % source_lang))
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'test12.%s' % target_lang))
+        source_data_path = os.path.join(path, 'en_de', 'test12.%s' % source_lang)
+        target_data_path = os.path.join(path, 'en_de', 'test12.%s' % target_lang)
     elif splits.lower() == 'test':
-        source_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % source_lang))
-        target_data = pd.read_table(os.path.join(path, 'en_de', 'test15.%s' % target_lang))
+        source_data_path = os.path.join(path, 'en_de', 'test15.%s' % source_lang)
+        target_data_path = os.path.join(path, 'en_de', 'test15.%s' % target_lang)
     else:
         raise Exception("Unsupported dataset splits")
 
-    source_data, target_data = preprocess(source_data, target_data)
+    source_data, target_data = load_dataset(source_data_path, target_data_path)
+
     if source_vocab is None:
         # Create source vocabulary
-        source_vocab = vocab.build(source_data, max_size=10000)
+        source_vocab = vocab.build(source_data, max_size=vocab_size)
         print("Source vocabulary size:", len(source_vocab))
 
     if target_vocab is None:
         # Create target vocabulary
-        target_vocab = vocab.build(target_data, max_size=10000)
+        target_vocab = vocab.build(target_data, max_size=vocab_size)
         print("Target vocabulary size:", len(target_vocab))
 
     if replace_unk:
@@ -46,13 +42,15 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
-    encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data, source_vocab,
-                                                                                target_vocab, one_hot)
+    encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data,
+                                                                                source_vocab, target_vocab, one_hot)
 
     return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
 
 
-def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False, splits='train'):
+def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False,
+          vocab_size=None, splits='train'):
+
     if reverse:
         source_lang, target_lang = 'vi', 'en'
     else:
@@ -70,28 +68,16 @@ def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
     else:
         raise Exception("Unsupported dataset splits")
 
-    if os.path.isfile(source_data_path + '.pkl') and os.path.isfile(target_data_path + '.pkl'):
-        with open(source_data_path + '.pkl', 'rb') as pkl_file:
-            source_data = dill.load(pkl_file)
-        with open(target_data_path + '.pkl', 'rb') as pkl_file:
-            target_data = dill.load(pkl_file)
-    else:
-        source_data = pd.read_table(source_data_path)
-        target_data = pd.read_table(target_data_path)
-        source_data, target_data = preprocess(source_data, target_data)
-        with open(source_data_path + '.pkl', 'wb') as pkl_file:
-            dill.dump(source_data, pkl_file)
-        with open(target_data_path + '.pkl', 'wb') as pkl_file:
-            dill.dump(target_data, pkl_file)
+    source_data, target_data = load_dataset(source_data_path, target_data_path)
 
     if source_vocab is None:
         # Create source vocabulary
-        source_vocab = vocab.build(source_data, max_size=10000)
+        source_vocab = vocab.build(source_data, max_size=vocab_size)
         print("Source vocabulary size:", len(source_vocab))
 
     if target_vocab is None:
         # Create target vocabulary
-        target_vocab = vocab.build(target_data, max_size=10000)
+        target_vocab = vocab.build(target_data, max_size=vocab_size)
         print("Target vocabulary size:", len(target_vocab))
 
     if replace_unk:
