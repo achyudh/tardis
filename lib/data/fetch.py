@@ -38,7 +38,6 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse_lang=False, replac
         source_data = [replace_unknown(x, source_vocab) for x in source_data]
         target_data = [replace_unknown(x, target_vocab) for x in target_data]
 
-    # TODO: Pickle vocab
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
@@ -84,7 +83,6 @@ def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
         source_data = [replace_unknown(x, source_vocab) for x in source_data]
         target_data = [replace_unknown(x, target_vocab) for x in target_data]
 
-    # TODO: Pickle vocab
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
