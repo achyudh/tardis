@@ -25,7 +25,6 @@ class Seq2Seq:
         # Decoder
         with tf.device(devices[1]):
             decoder_inputs = Input(shape=(None, ))
-            # decoder_outputs = Lambda(self.decode, arguments={'prev_states': encoder_states})(decoder_inputs)
             decoder_outputs = self.decode(decoder_inputs, encoder_states)
 
         # Input: Source and target sentence, Output: Predicted translation
@@ -44,16 +43,6 @@ class Seq2Seq:
             encoder = LSTM(self.config.hidden_dim, return_state=True, return_sequences=True)(encoder)
         _, state_h, state_c = encoder
         return [state_h, state_c]
-
-    def decode_unroll(self, decoder_inputs, prev_states):
-        self.config.max_target_len = 10
-        decoder_outputs = np.zeros((self.config.batch_size, self.config.max_target_len))
-        for i in range(self.config.max_target_len):
-            decoder_output, prev_states = self.decode_step(decoder_inputs, prev_states)
-            decoder_output = np.argmax(decoder_output, axis=-1) # Greedy
-            decoder_outputs[:, i] = decoder_output
-
-        return K.variable(decoder_outputs, dtype=tf.int64)
 
     def decode(self, decoder_inputs, encoder_states):
         decoder_embedding = Embedding(self.config.target_vocab_size, self.config.embedding_dim,
