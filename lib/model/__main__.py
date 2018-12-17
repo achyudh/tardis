@@ -13,7 +13,7 @@ from lib.data.generator import WMTSequence
 from lib.model.util import embedding_matrix
 from lib.model import metrics
 from lib.model.args import get_args
-from lib.model.seq2seq import Seq2Seq, TinySeq2Seq
+from lib.model.seq2seq import Seq2Seq
 
 if __name__ == '__main__':
     # Select GPU based on args
@@ -83,8 +83,9 @@ if __name__ == '__main__':
     else:
         raise Exception("Unsupported dataset")
 
-    training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
-    validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
+    model = None
+    metrics.DATASET = args.dataset
+    metrics.TARGET_VOCAB = target_vocab
 
     model_config = deepcopy(args)
     source_vocab_size = len(source_vocab)
@@ -100,14 +101,10 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
-    model = None
-    metrics.DATASET = args.dataset
-    metrics.TARGET_VOCAB = target_vocab
+    training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
+    validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
-    if args.cpu:
-        model = TinySeq2Seq(model_config)
-    else:
-        model = Seq2Seq(model_config)
+    model = Seq2Seq(model_config)
 
     if args.ensemble:
         # TODO: increase number of workers and set master
