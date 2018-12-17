@@ -3,7 +3,7 @@ from lib.data.util import *
 
 
 def en_de(path, source_vocab=None, target_vocab=None, reverse_lang=False, replace_unk=True, one_hot=False,
-          vocab_size=None, splits='train'):
+          source_vocab_size=None, target_vocab_size=None, splits='train'):
 
     if reverse_lang:
         source_lang, target_lang = 'de', 'en'
@@ -24,32 +24,37 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse_lang=False, replac
 
     source_data, target_data = load_dataset(source_data_path, target_data_path)
 
+    if splits.lower() == 'test':
+        raw_target_data = [x[4:-4] for x in target_data]
+
     if source_vocab is None:
         # Create source vocabulary
-        source_vocab = vocab.build(source_data, max_size=vocab_size)
+        source_vocab = vocab.build(source_data, max_size=source_vocab_size)
         print("Source vocabulary size:", len(source_vocab))
 
     if target_vocab is None:
         # Create target vocabulary
-        target_vocab = vocab.build(target_data, max_size=vocab_size)
+        target_vocab = vocab.build(target_data, max_size=target_vocab_size)
         print("Target vocabulary size:", len(target_vocab))
 
     if replace_unk:
         source_data = [replace_unknown(x, source_vocab) for x in source_data]
         target_data = [replace_unknown(x, target_vocab) for x in target_data]
 
-    # TODO: Pickle vocab
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
     encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data,
                                                                                 source_vocab, target_vocab, one_hot)
 
-    return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
+    if splits.lower() == 'test':
+        return encoder_input_data, decoder_input_data, decoder_target_data, raw_target_data, source_vocab, target_vocab
+    else:
+        return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
 
 
 def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False,
-          vocab_size=None, splits='train'):
+          source_vocab_size=None, target_vocab_size=None, splits='train'):
 
     if reverse:
         source_lang, target_lang = 'vi', 'en'
@@ -70,25 +75,29 @@ def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
 
     source_data, target_data = load_dataset(source_data_path, target_data_path)
 
+    if splits.lower() == 'test':
+        raw_target_data = [x[4:-4] for x in target_data]
+
     if source_vocab is None:
         # Create source vocabulary
-        source_vocab = vocab.build(source_data, max_size=vocab_size)
+        source_vocab = vocab.build(source_data, max_size=source_vocab_size)
         print("Source vocabulary size:", len(source_vocab))
 
     if target_vocab is None:
         # Create target vocabulary
-        target_vocab = vocab.build(target_data, max_size=vocab_size)
+        target_vocab = vocab.build(target_data, max_size=target_vocab_size)
         print("Target vocabulary size:", len(target_vocab))
 
     if replace_unk:
         source_data = [replace_unknown(x, source_vocab) for x in source_data]
         target_data = [replace_unknown(x, target_vocab) for x in target_data]
 
-    # TODO: Pickle vocab
     print("Source", splits, "split size:", len(source_data))
     print("Target", splits, "split size:", len(target_data))
     print("Converting words to indices for", splits, "split...")
     encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data, source_vocab,
                                                                                 target_vocab, one_hot)
-
-    return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
+    if splits.lower() == 'test':
+        return encoder_input_data, decoder_input_data, decoder_target_data, raw_target_data, source_vocab, target_vocab
+    else:
+        return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
