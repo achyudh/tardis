@@ -8,6 +8,8 @@ from elephas.spark_model import SparkModel
 
 from pyspark import SparkContext, SparkConf
 
+from keras.optimizers import Adam
+
 from lib.data import fetch
 from lib.data.generator import WMTSequence
 from lib.model.util import embedding_matrix
@@ -107,10 +109,11 @@ if __name__ == '__main__':
     model = Seq2Seq(model_config)
 
     if args.ensemble:
-        # TODO: increase number of workers and set master
-        conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
-        sc = SparkContext(conf=conf).addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
-        model = SparkModel(model, frequency='epoch')  # Distributed ensemble
+        conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', str(args.num_workers)).setMaster('local[*]')
+        sc = SparkContext(conf=conf) # .addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
+        model = SparkModel(model.model, frequency='epoch')  # Distributed ensemble
+
+        # TODO: convert input to RDD
 
     model.train_generator(training_generator, validation_generator)
     model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)

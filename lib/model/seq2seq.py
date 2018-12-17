@@ -4,10 +4,9 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from keras.initializers import RandomUniform
-from keras.layers import Input, LSTM, GRU, Embedding, Dense, Lambda
+from keras.layers import Input, LSTM, GRU, Embedding, Dense
 from keras.models import Model
 from keras.losses import categorical_crossentropy
-from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint
 
 from lib.model.metrics import bleu_score
@@ -37,9 +36,10 @@ class Seq2Seq:
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-        optimizer = Adam(lr=config.lr, clipnorm=25.)
-        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
-        print(self.model.summary())
+        optimizer = Adam(lr=model_config.lr, clipnorm=25.)
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
+
+        print(model.summary())
 
     def encode(self, encoder_inputs, recurrent_unit='lstm'):
         initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
