@@ -18,15 +18,16 @@ def preprocess(source_data, target_data):
     target_data = target_data.swifter.apply(lambda x: 'SOS ' + x + ' EOS')
 
     # Remove punctuation and digits
-    source_data = source_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
-    target_data = target_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
+    # WARNING: Removes special characters in some languages
+    # source_data = source_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
+    # target_data = target_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
 
     source_data = source_data.values.flatten()
     target_data = target_data.values.flatten()
     return source_data, target_data
 
 
-def load_dataset(source_data_path, target_data_path):
+def load_dataset(source_data_path, target_data_path, dataset_size=None):
     if os.path.isfile(source_data_path + '.pkl') and os.path.isfile(target_data_path + '.pkl'):
         with open(source_data_path + '.pkl', 'rb') as pkl_file:
             source_data = dill.load(pkl_file)
@@ -40,7 +41,11 @@ def load_dataset(source_data_path, target_data_path):
             dill.dump(source_data, pkl_file)
         with open(target_data_path + '.pkl', 'wb') as pkl_file:
             dill.dump(target_data, pkl_file)
-    return source_data, target_data
+
+    if dataset_size is None or dataset_size <= 0:
+        return source_data, target_data
+    else:
+        return source_data[:dataset_size], target_data[:dataset_size]
 
 
 def replace_unknown(line, vocab):
@@ -80,7 +85,18 @@ def build_indices(source_data, target_data, source_vocab, target_vocab, one_hot)
     return encoder_input_data, decoder_input_data, decoder_target_data
 
 
-def reverse_indexing(indexed_data, vocab, ravel=False):
+def trim_sentences(sentences):
+    trimmed_sentences = list()
+    for sentence in sentences:
+        trim_index = sentence.find('EOS')
+        if trim_index != -1:
+            trimmed_sentences.append(sentence[:trim_index])
+        else:
+            trimmed_sentences.append(sentence)
+    return trimmed_sentences
+
+
+def reverse_index(indexed_data, vocab, ravel=False):
     reversed_data = list()
     indexed_data = np.argmax(indexed_data, axis=-1)
     word_idx = {id: word for word, id in vocab.items()}
