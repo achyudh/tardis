@@ -51,10 +51,10 @@ class Seq2Seq:
 
     def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
         checkpoint_filename = \
-            'full_%s_ep{epoch:02d}_nl%d_sv%d_tv%d.hdf5' % (self.config.dataset, self.config.num_layers,
-                                                           self.config.source_vocab_size, self.config.target_vocab_size)
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+                                                        self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
-                     ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', checkpoint_filename),
+                     ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
                                      monitor='val_loss', verbose=1, save_best_only=False,
                                      save_weights_only=True, mode='auto', period=1)]
         self.model.fit([encoder_train_input, decoder_train_input], decoder_train_target,
@@ -64,7 +64,13 @@ class Seq2Seq:
                        callbacks=callbacks)
 
     def train_generator(self, training_generator, validation_generator):
-        callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay)]
+        checkpoint_filename = \
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+                                                        self.config.source_vocab_size, self.config.target_vocab_size)
+        callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
+                     ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
+                                     monitor='val_loss', verbose=1, save_best_only=False,
+                                     save_weights_only=True, mode='auto', period=1)]
         self.model.fit_generator(training_generator, epochs=self.config.epochs, callbacks=callbacks,
                                  validation_data=validation_generator)
 

@@ -12,17 +12,16 @@ from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq, TinySeq2Seq
 
-root_dir = os.getcwd()
-
 if __name__ == '__main__':
     # Select GPU based on args
     args = get_args()
+    root_dir = os.getcwd()
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
     if args.dataset == 'en_de':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, source_vocab_size=args.source_vocab_size,
+            fetch.en_de(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, splits='dev')
@@ -34,7 +33,7 @@ if __name__ == '__main__':
 
     elif args.dataset == 'de_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, source_vocab_size=args.source_vocab_size,
+            fetch.en_de(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size, reverse_lang=True)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, reverse_lang=True, splits='dev')
@@ -46,7 +45,7 @@ if __name__ == '__main__':
 
     elif args.dataset == 'en_vi':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, source_vocab_size=args.source_vocab_size,
+            fetch.en_vi(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, splits='dev')
@@ -58,7 +57,7 @@ if __name__ == '__main__':
 
     elif args.dataset == 'vi_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, source_vocab_size=args.source_vocab_size,
+            fetch.en_vi(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size, reverse=True)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, reverse=True, splits='dev')
