@@ -1,6 +1,9 @@
 import os
 from copy import deepcopy
 
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
+
 from elephas.spark_model import SparkModel
 
 from pyspark import SparkContext, SparkConf
@@ -16,6 +19,15 @@ if __name__ == '__main__':
     # Select GPU based on args
     args = get_args()
     root_dir = os.getcwd()
+
+    # Set GPU usage
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.log_device_placement = True
+    sess = tf.Session(config=config)
+
+    set_session(sess)
+
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
