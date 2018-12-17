@@ -77,3 +77,6 @@ wcwidth==0.1.7
 webencodings==0.5.1
 Werkzeug==0.14.1
 widgetsnbextension==3.4.2
+swifter==0.280
+sacrebleu==1.2.12
+dill==0.2.8.2

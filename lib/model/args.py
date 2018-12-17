@@ -2,10 +2,9 @@ import os
 
 from argparse import ArgumentParser
 
-root_dir = os.getcwd()
-
 
 def get_args():
+    root_dir = os.getcwd()
     parser = ArgumentParser(description="Seq2Seq models for Neural Machine Translation (NMT)")
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--devices', type=str, default='0,1')
@@ -15,9 +14,11 @@ def get_args():
     parser.add_argument('--hidden-dim', type=int, default=1000)
     parser.add_argument('--num-encoder-layers', type=int, default=2)
     parser.add_argument('--num-decoder-layers', type=int, default=2)
-    parser.add_argument('--vocab-size', type=int, default=10000)
-    parser.add_argument('--lr', type=float, default=0.7)
-    parser.add_argument('--decay', type=float, default=0.5)
+    parser.add_argument('--dataset-size', type=int, default=0)
+    parser.add_argument('--source-vocab-size', type=int, default=10000)
+    parser.add_argument('--target-vocab-size', type=int, default=10000)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--decay', type=float, default=0.0)
     parser.add_argument('--beam-size', type=int, default=2)
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--dataset', type=str, default='en_vi', choices=['en_de', 'de_en', 'en_vi', 'vi_en'])

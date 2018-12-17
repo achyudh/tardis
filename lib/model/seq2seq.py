@@ -1,12 +1,14 @@
+import os
+
+import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from keras.initializers import RandomUniform
 from keras.layers import Input, LSTM, Embedding, Dense, Lambda
 from keras.models import Model
-from keras.optimizers import SGD, Adam
 from keras.losses import categorical_crossentropy
-
-import numpy as np
+from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint
 
 from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
@@ -29,9 +31,8 @@ class Seq2Seq:
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-
-        optimizer = SGD(lr=config.lr, momentum=0.0, clipnorm=25.)
-        self.model.compile(optimizer=optimizer, loss=categorical_crossentropy, metrics=['acc'])
+        optimizer = Adam(lr=config.lr, clipnorm=25.)
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         print(self.model.summary())
 
     def encode(self, initial_weights, encoder_inputs):
@@ -55,8 +56,28 @@ class Seq2Seq:
         decoder_dense = Dense(self.config.target_vocab_size, activation='softmax')
         return decoder_dense(decoder_outputs)
 
+    def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
+        checkpoint_filename = \
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+                                                        self.config.source_vocab_size, self.config.target_vocab_size)
+        callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
+                     ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
+                                     monitor='val_loss', verbose=1, save_best_only=False,
+                                     save_weights_only=True, mode='auto', period=1)]
+        self.model.fit([encoder_train_input, decoder_train_input], decoder_train_target,
+                       batch_size=self.config.batch_size,
+                       epochs=self.config.epochs,
+                       validation_split=0.20,
+                       callbacks=callbacks)
+
     def train_generator(self, training_generator, validation_generator):
-        callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay)]
+        checkpoint_filename = \
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+                                                        self.config.source_vocab_size, self.config.target_vocab_size)
+        callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
+                     ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
+                                     monitor='val_loss', verbose=1, save_best_only=False,
+                                     save_weights_only=True, mode='auto', period=1)]
         self.model.fit_generator(training_generator, epochs=self.config.epochs, callbacks=callbacks,
                                  validation_data=validation_generator)
 
@@ -91,7 +112,7 @@ class Seq2Seq:
             y_pred = np.argmax(y_pred, axis=-1)
         print("BLEU Score:", bleu_score(y_pred, decoder_train_target))
         # An error in the sacrebleu library prevents multi_bleu_score from working on WMT '14 EN-DE test split
-        # print("BLEU Score", multi_bleu_score(y_pred, self.config.target_vocab, self.config.dataset))
+        # print("Multi-BLEU Score", multi_bleu_score(y_pred, self.config.target_vocab, self.config.dataset))
 
 class TinySeq2Seq:
     def __init__(self, config):
