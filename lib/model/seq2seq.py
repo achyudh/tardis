@@ -90,9 +90,9 @@ class Seq2Seq:
                             list(hyp[:(i + 1)]) + [next_hyp] + ([0] * (encoder_predict_input.shape[0] - i - 1))
                         ))
 
-            k_beam = sorted(all_hypotheses)[-beam_size:]
+            k_beam = sorted(all_hypotheses, key=lambda x: x[0])[-beam_size:] # Sort by probability
 
-        return k_beam[0][1] # Pick hypothesis with highest probability
+        return k_beam[-1][1] # Pick hypothesis with highest probability
 
     def evaluate(self, encoder_predict_input, decoder_predict_input, decoder_train_target):
         if self.config.beam_size > 0:
