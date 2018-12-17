@@ -13,6 +13,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--hidden-dim', type=int, default=1000)
     parser.add_argument('--num-layers', type=int, default=2)
+    parser.add_argument('--dataset-size', type=int, default=0)
     parser.add_argument('--source-vocab-size', type=int, default=10000)
     parser.add_argument('--target-vocab-size', type=int, default=10000)
     parser.add_argument('--lr', type=float, default=0.001)
