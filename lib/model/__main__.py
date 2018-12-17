@@ -21,41 +21,41 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
     if args.dataset == 'en_de':
-        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
+        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab, max_train_target_len = \
             fetch.en_de(args.dataset_path, vocab_size=args.vocab_size)
-        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
+        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab, max_dev_target_len = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, splits='dev')
-        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
+        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab, max_test_target_len = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, one_hot=True, splits='test')
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.de.vec'), target_vocab)
 
     elif args.dataset == 'de_en':
-        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
+        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab, max_train_target_len = \
             fetch.en_de(args.dataset_path, vocab_size=args.vocab_size, reverse_lang=True)
-        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
+        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab, max_dev_target_len = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, reverse_lang=True, splits='dev')
-        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
+        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab, max_test_target_len = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse_lang=True, splits='test')
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.de.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), target_vocab)
 
     elif args.dataset == 'en_vi':
-        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
+        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab, max_train_target_len = \
             fetch.en_vi(args.dataset_path, vocab_size=args.vocab_size)
-        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
+        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab, max_dev_target_len = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, splits='dev')
-        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
+        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab, max_test_target_len = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, one_hot=True, splits='test')
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.vi.vec'), target_vocab)
 
     elif args.dataset == 'vi_en':
-        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
+        encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab, max_train_target_len = \
             fetch.en_vi(args.dataset_path, vocab_size=args.vocab_size, reverse=True)
-        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
+        encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab, max_dev_target_len = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, reverse=True, splits='dev')
-        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab = \
+        encoder_test_input, decoder_test_input, decoder_test_target, source_vocab, target_vocab, max_test_target_len = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse=True, splits='test')
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.vi.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), target_vocab)
@@ -78,6 +78,8 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
+    model_config.max_target_len = max(max_train_target_len, max_dev_target_len, max_test_target_len)
+
     training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
     validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
@@ -85,7 +87,7 @@ if __name__ == '__main__':
         model = TinySeq2Seq(args)
     else:
         model = Seq2Seq(model_config)
-        
+
     if args.ensemble:
         # TODO: increase number of workers and set master
         conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')

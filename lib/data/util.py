@@ -81,7 +81,6 @@ def build_indices(source_data, target_data, source_vocab, target_vocab, one_hot)
 
 def reverse_indexing(indexed_data, vocab, ravel=False):
     reversed_data = list()
-    indexed_data = np.argmax(indexed_data, axis=-1)
     # TODO: Use dict comprehension instead
     word_idx = dict([(id, word) for word, id in vocab.items()])
     for indexed_line in indexed_data:

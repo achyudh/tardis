@@ -69,6 +69,8 @@ def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
         raise Exception("Unsupported dataset splits")
 
     source_data, target_data = load_dataset(source_data_path, target_data_path)
+    source_data = source_data[100]
+    target_data = target_data[100]
 
     if source_vocab is None:
         # Create source vocabulary
