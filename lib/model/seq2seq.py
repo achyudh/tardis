@@ -37,7 +37,7 @@ class Seq2Seq:
             decoder_embedded = decoder_embedding(decoder_inputs)
             decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)
             for i in range(1, config.num_layers):
-                decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+                decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder)  # Use the final encoder state as context
             decoder_outputs, _, _ = decoder
             decoder_dense = Dense(config.target_vocab_size, activation='softmax')
             decoder_outputs = decoder_dense(decoder_outputs)
@@ -51,7 +51,7 @@ class Seq2Seq:
 
     def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
         checkpoint_filename = \
-            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+            'ep{epoch:02d}_nl%d_bs%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.beam_size, self.config.dataset_size,
                                                         self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
                      ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
