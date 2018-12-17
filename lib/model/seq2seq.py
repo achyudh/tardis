@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from keras.initializers import RandomUniform
-from keras.layers import Input, LSTM, Embedding, Dense, Lambda
+from keras.layers import Input, LSTM, GRU, Embedding, Dense, Lambda
 from keras.models import Model
 from keras.losses import categorical_crossentropy
 from keras.optimizers import Adam
@@ -13,23 +13,33 @@ from keras.callbacks import ModelCheckpoint
 from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
-def encode(config, initial_weights, encoder_inputs):
+def encode(config, initial_weights, encoder_inputs, recurrent_unit='lstm'):
     encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
                                   weights=[config.source_embedding_map], trainable=False)
     encoder_embedded = encoder_embedding(encoder_inputs)
-    encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
-    for i in range(1, config.num_encoder_layers):
-        encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
+    if recurrent_unit == 'lstm':
+        encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
+        for i in range(1, config.num_encoder_layers):
+            encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
+    else: # gru
+        encoder = GRU(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
+        for i in range(1, config.num_encoder_layers):
+            encoder = GRU(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
     _, state_h, state_c = encoder
     return [state_h, state_c]
 
-def decode(config, decoder_inputs, encoder_states):
+def decode(config, decoder_inputs, encoder_states, recurrent_unit='lstm'):
     decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
                               weights=[config.target_embedding_map], trainable=False)
     decoder_embedded = decoder_embedding(decoder_inputs)
-    decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
-    for i in range(1, config.num_decoder_layers):
-        decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+    if recurrent_unit == 'lstm':
+        decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
+        for i in range(1, config.num_decoder_layers):
+            decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+    else: # gru
+        decoder = GRU(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
+        for i in range(1, config.num_decoder_layers):
+            decoder = GRU(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
     decoder_outputs, decoder_states = decoder[0], decoder[1:]
     decoder_dense = Dense(config.target_vocab_size, activation='softmax')
     return decoder_dense(decoder_outputs)
@@ -43,12 +53,12 @@ class Seq2Seq:
         with tf.device(devices[0]):
             initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
             encoder_inputs = Input(shape=(None, ))
-            encoder_states = encode(config, initial_weights, encoder_inputs)
+            encoder_states = encode(config, initial_weights, encoder_inputs, recurrent_initializer='lstm')
 
         # Decoder
         with tf.device(devices[1]):
             decoder_inputs = Input(shape=(None, ))
-            decoder_outputs = decode(config, decoder_inputs, encoder_states)
+            decoder_outputs = decode(config, decoder_inputs, encoder_states, recurrent_initializer='lstm')
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
@@ -58,7 +68,7 @@ class Seq2Seq:
 
     def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
         checkpoint_filename = \
-            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
                                                         self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
                      ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
@@ -72,7 +82,7 @@ class Seq2Seq:
 
     def train_generator(self, training_generator, validation_generator):
         checkpoint_filename = \
-            'ep{epoch:02d}_nl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_layers, self.config.dataset_size,
+            'ep{epoch:02d}_nl%d_ds%d_sv%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
                                                         self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
                      ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
