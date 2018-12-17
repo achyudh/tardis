@@ -95,7 +95,7 @@ if __name__ == '__main__':
         model = TinySeq2Seq(args)
     else:
         model = Seq2Seq(model_config)
-        
+
     if args.ensemble:
         # TODO: increase number of workers and set master
         conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
