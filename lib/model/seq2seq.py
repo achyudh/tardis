@@ -13,7 +13,9 @@ from keras.callbacks import ModelCheckpoint
 from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
-def encode(config, initial_weights, encoder_inputs, recurrent_unit='lstm'):
+def encode(config, recurrent_unit='lstm'):
+    initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
+    encoder_inputs = Input(shape=(None, ))
     encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
                                   weights=[config.source_embedding_map], trainable=False)
     encoder_embedded = encoder_embedding(encoder_inputs)
@@ -28,7 +30,8 @@ def encode(config, initial_weights, encoder_inputs, recurrent_unit='lstm'):
     _, state_h, state_c = encoder
     return [state_h, state_c]
 
-def decode(config, decoder_inputs, encoder_states, recurrent_unit='lstm'):
+def decode(config, encoder_states, recurrent_unit='lstm'):
+    decoder_inputs = Input(shape=(None, ))
     decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
                               weights=[config.target_embedding_map], trainable=False)
     decoder_embedded = decoder_embedding(decoder_inputs)
@@ -51,14 +54,11 @@ class Seq2Seq:
 
         # Encoder
         with tf.device(devices[0]):
-            initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
-            encoder_inputs = Input(shape=(None, ))
-            encoder_states = encode(config, initial_weights, encoder_inputs, recurrent_initializer='lstm')
+            encoder_states = encode(config, recurrent_unit='lstm')
 
         # Decoder
         with tf.device(devices[1]):
-            decoder_inputs = Input(shape=(None, ))
-            decoder_outputs = decode(config, decoder_inputs, encoder_states, recurrent_initializer='lstm')
+            decoder_outputs = decode(config, encoder_states, recurrent_unit='lstm')
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
@@ -126,4 +126,16 @@ class Seq2Seq:
 
 class TinySeq2Seq:
     def __init__(self, config):
-        pass
+        self.config = config
+
+        # Encoder
+        encoder_states = encode(config, recurrent_unit='gru')
+
+        # Decoder
+        decoder_outputs = decode(config, encoder_states, recurrent_unit='gru')
+
+        # Input: Source and target sentence, Output: Predicted translation
+        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        optimizer = Adam(lr=config.lr, clipnorm=25.)
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        print(self.model.summary())
