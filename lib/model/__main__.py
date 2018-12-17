@@ -78,8 +78,6 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
-    model_config.max_target_len = max(max_train_target_len, max_dev_target_len, max_test_target_len)
-
     training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
     validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
