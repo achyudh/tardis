@@ -14,7 +14,7 @@ from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
 def encode(config, recurrent_unit='lstm'):
-    initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
+    initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=config.seed)
     encoder_inputs = Input(shape=(None, ))
     encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
                                   weights=[config.source_embedding_map], trainable=False)

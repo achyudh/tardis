@@ -21,12 +21,13 @@ if __name__ == '__main__':
     root_dir = os.getcwd()
 
     # Set GPU usage
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    config.log_device_placement = True
-    sess = tf.Session(config=config)
+    if not args.cpu:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        config.log_device_placement = True
+        sess = tf.Session(config=config)
 
-    set_session(sess)
+        set_session(sess)
 
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
@@ -82,9 +83,8 @@ if __name__ == '__main__':
     else:
         raise Exception("Unsupported dataset")
 
-    model = None
-    metrics.DATASET = args.dataset
-    metrics.TARGET_VOCAB = target_vocab
+    training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
+    validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
     model_config = deepcopy(args)
     source_vocab_size = len(source_vocab)
@@ -100,11 +100,12 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
-    training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
-    validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
+    model = None
+    metrics.DATASET = args.dataset
+    metrics.TARGET_VOCAB = target_vocab
 
     if args.cpu:
-        model = TinySeq2Seq(args)
+        model = TinySeq2Seq(model_config)
     else:
         model = Seq2Seq(model_config)
 
