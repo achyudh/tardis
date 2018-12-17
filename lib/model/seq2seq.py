@@ -13,6 +13,27 @@ from keras.callbacks import ModelCheckpoint
 from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
+def encode(config, initial_weights, encoder_inputs):
+    encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
+                                  weights=[config.source_embedding_map], trainable=False)
+    encoder_embedded = encoder_embedding(encoder_inputs)
+    encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
+    for i in range(1, config.num_encoder_layers):
+        encoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(encoder)
+    _, state_h, state_c = encoder
+    return [state_h, state_c]
+
+def decode(config, decoder_inputs, encoder_states):
+    decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
+                              weights=[config.target_embedding_map], trainable=False)
+    decoder_embedded = decoder_embedding(decoder_inputs)
+    decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
+    for i in range(1, config.num_decoder_layers):
+        decoder = LSTM(config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
+    decoder_outputs, decoder_states = decoder[0], decoder[1:]
+    decoder_dense = Dense(config.target_vocab_size, activation='softmax')
+    return decoder_dense(decoder_outputs)
+
 class Seq2Seq:
     def __init__(self, config):
         self.config = config
@@ -22,39 +43,18 @@ class Seq2Seq:
         with tf.device(devices[0]):
             initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
             encoder_inputs = Input(shape=(None, ))
-            encoder_states = self.encode(initial_weights, encoder_inputs)
+            encoder_states = encode(config, initial_weights, encoder_inputs)
 
         # Decoder
         with tf.device(devices[1]):
             decoder_inputs = Input(shape=(None, ))
-            decoder_outputs = self.decode(decoder_inputs, encoder_states)
+            decoder_outputs = decode(config, decoder_inputs, encoder_states)
 
         # Input: Source and target sentence, Output: Predicted translation
         self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
         optimizer = Adam(lr=config.lr, clipnorm=25.)
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         print(self.model.summary())
-
-    def encode(self, initial_weights, encoder_inputs):
-        encoder_embedding = Embedding(self.config.source_vocab_size, self.config.embedding_dim,
-                                      weights=[self.config.source_embedding_map], trainable=False)
-        encoder_embedded = encoder_embedding(encoder_inputs)
-        encoder = LSTM(self.config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
-        for i in range(1, self.config.num_encoder_layers):
-            encoder = LSTM(self.config.hidden_dim, return_state=True, return_sequences=True)(encoder)
-        _, state_h, state_c = encoder
-        return [state_h, state_c]
-
-    def decode(self, decoder_inputs, encoder_states):
-        decoder_embedding = Embedding(self.config.target_vocab_size, self.config.embedding_dim,
-                                  weights=[self.config.target_embedding_map], trainable=False)
-        decoder_embedded = decoder_embedding(decoder_inputs)
-        decoder = LSTM(self.config.hidden_dim, return_state=True, return_sequences=True)(decoder_embedded, initial_state=encoder_states)  # Accepts concatenated encoder states as input
-        for i in range(1, self.config.num_decoder_layers):
-            decoder = LSTM(self.config.hidden_dim, return_state=True, return_sequences=True)(decoder) # Use the final encoder state as context
-        decoder_outputs, decoder_states = decoder[0], decoder[1:]
-        decoder_dense = Dense(self.config.target_vocab_size, activation='softmax')
-        return decoder_dense(decoder_outputs)
 
     def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
         checkpoint_filename = \
