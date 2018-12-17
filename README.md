@@ -22,6 +22,8 @@ An ensemble of the neural machine translation model from from Sequence to Sequen
   - `python -m lib.model --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
 * To run the TinySeq2Seq ensemble on multiple nodes, issue the following command from the project root directory: (WIP)
   - `spark-submit --driver-memory 1G -m lib/model/__main__.py --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
+  
+ Note: Beam search is used by default during testing. Add the flag `--beam-size 0` to use greedy search.
 
 ## References
 
