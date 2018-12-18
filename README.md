@@ -21,10 +21,10 @@ An ensemble of the neural machine translation model from from Sequence to Sequen
 * To run the single node TinySeq2Seq model on a CPU, issue the following command from the project root directory:
   - `python -m lib.model --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
 * To run the TinySeq2Seq ensemble on multiple nodes:
-  * Generate the egg file by running:
+  * Generate the egg file by running - must run after every change in the code:
   `python setup.py bdist_egg`
   * Issue the following command from the project root directory: (WIP)
-  - `spark-submit --driver-memory 1G -m lib/model/__main__.py --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size>`
+  - `spark-submit --driver-memory 1G -m lib/model/__main__.py --cpu [--ensemble] --dataset <lang_pair> --batch-size <batch_size> --recurrent-unit gru`
 
  Note: Beam search is used by default during testing. Add the flag `--beam-size 0` to use greedy search.
 
