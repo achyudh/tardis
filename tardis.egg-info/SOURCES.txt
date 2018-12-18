@@ -9,6 +9,7 @@ lib/data/vocab.py
 lib/model/__init__.py
 lib/model/__main__.py
 lib/model/args.py
+lib/model/ensemble.py
 lib/model/metrics.py
 lib/model/seq2seq.py
 lib/model/util.py

@@ -19,6 +19,7 @@ from lib.model.util import embedding_matrix, lr_scheduler
 from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq
+from lib.model.ensemble import Ensemble
 
 if __name__ == '__main__':
     # Select GPU based on args
@@ -114,24 +115,28 @@ if __name__ == '__main__':
     if args.ensemble:
         # Uncommenting this line produces: "TypeError: can't pickle _thread.lock objects"
         # Comminting out produces: "OSError: [Errno 48] Address already in use"
-        # multiprocessing.set_start_method('spawn', force=True)
+        multiprocessing.set_start_method('spawn', force=True)
 
         conf = SparkConf().setAppName('Tardis').setMaster('local[*]').set('spark.executor.instances', str(args.num_workers))
         sc = SparkContext(conf=conf)
 
-        model = SparkModel(model.model, frequency='epoch') #, mode='asynchronous')  # Distributed ensemble
+        model = SparkModel(model.model, frequency='epoch', mode='asynchronous')  # Distributed ensemble
 
         train_pairs = [(x, y) for x, y in zip([encoder_train_input, decoder_train_input], decoder_train_target)]
         train_rdd = sc.parallelize(train_pairs, model_config.num_workers)
 
-        # train_rdd = to_simple_rdd(sc, [encoder_train_input, decoder_train_input], decoder_train_target)
-        # test_rdd = to_simple_rdd(sc, [encoder_test_input, decoder_test_input], raw_test_target)
+        test_pairs = [(x, y) for x, y in zip([encoder_test_input, decoder_test_input], raw_test_target)]
+        test_rdd = sc.parallelize(test_pairs, model_config.num_workers)
 
         model.fit(train_rdd,
                 batch_size=model_config.batch_size,
                 epochs=model_config.epochs,
                 validation_split=0.20,
                 verbose=1)
+
+        # TODO: train other models and call Ensemble
+        # ensemble = Ensemble([model1, model2, model3])
+        # score, acc = ensemble.evaluate(test_rdd)
 
     else:
         model.train_generator(training_generator, validation_generator)

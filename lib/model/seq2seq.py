@@ -1,5 +1,4 @@
 import os
-from multiprocessing import Lock
 
 import numpy as np
 import tensorflow as tf
@@ -15,31 +14,38 @@ from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
 class Seq2Seq:
+    config = None
+    model = None
+
     def __init__(self, config):
         self.config = config
-        self.lock = Lock()
 
         if self.config.cpu:
             devices = list('/cpu:' + str(x) for x in (0, 0))
         if not self.config.cpu:
             devices = list('/gpu:' + x for x in config.devices)
 
-        with self.lock:
-            # Encoder
-            with tf.device(devices[0]):
-                encoder_inputs = Input(shape=(None, ))
-                encoder_states = self.encode(encoder_inputs, recurrent_unit=self.config.recurrent_unit)
-            # Decoder
-            with tf.device(devices[1]):
-                decoder_inputs = Input(shape=(None, ))
-                decoder_outputs = self.decode(decoder_inputs, encoder_states, recurrent_unit=self.config.recurrent_unit)
+        # Encoder
+        with tf.device(devices[0]):
+            encoder_inputs = Input(shape=(None, ))
+            encoder_states = self.encode(encoder_inputs, recurrent_unit=self.config.recurrent_unit)
+        # Decoder
+        with tf.device(devices[1]):
+            decoder_inputs = Input(shape=(None, ))
+            decoder_outputs = self.decode(decoder_inputs, encoder_states, recurrent_unit=self.config.recurrent_unit)
 
-            # Input: Source and target sentence, Output: Predicted translation
-            self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-            optimizer = Adam(lr=self.config.lr, clipnorm=25.)
-            self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        # Input: Source and target sentence, Output: Predicted translation
+        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        optimizer = Adam(lr=self.config.lr, clipnorm=25.)
+        self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
 
-            print(self.model.summary())
+        print(self.model.summary())
+
+    # def __getstate__(self):
+    #     return self.__dict__.copy()
+    #
+    # def __setstate__(self, state):
+    #     self.__dict__.update(state)
 
     def encode(self, encoder_inputs, recurrent_unit='lstm'):
         initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
@@ -53,7 +59,6 @@ class Seq2Seq:
             _, state_h, state_c = encoder
             return [state_h, state_c]
         else: # GRU
-            # encoder = GRU(self.config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
             encoder = GRU(self.config.hidden_dim, return_state=True, return_sequences=True, recurrent_initializer=initial_weights)(encoder_embedded)
             for i in range(1, self.config.num_encoder_layers):
                 encoder = GRU(self.config.hidden_dim, return_state=True, return_sequences=True)(encoder)
