@@ -1,21 +1,46 @@
 import os
+import socket
 from copy import deepcopy
+import multiprocessing
+
+import time
+
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
 
 from elephas.spark_model import SparkModel
+from elephas.utils.rdd_utils import to_simple_rdd
 
-from pyspark import SparkContext, SparkConf
+from contextlib import contextmanager
+from pyspark import SparkConf, SparkContext
+from pyspark.sql import SparkSession
+
+from keras.callbacks import ModelCheckpoint
+
+import numpy as np
 
 from lib.data import fetch
 from lib.data.generator import WMTSequence
-from lib.model.util import embedding_matrix
+from lib.model.util import embedding_matrix, lr_scheduler
 from lib.model import metrics
 from lib.model.args import get_args
-from lib.model.seq2seq import Seq2Seq, TinySeq2Seq
+from lib.model.seq2seq import Seq2Seq
+from lib.model.ensemble import Ensemble
 
 if __name__ == '__main__':
     # Select GPU based on args
     args = get_args()
     root_dir = os.getcwd()
+
+    # Set GPU usage
+    if not args.cpu:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        config.log_device_placement = True
+        sess = tf.Session(config=config)
+
+        set_session(sess)
+
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
@@ -91,16 +116,32 @@ if __name__ == '__main__':
     training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
     validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
-    if args.cpu:
-        model = TinySeq2Seq(args)
-    else:
-        model = Seq2Seq(model_config)
-        
-    if args.ensemble:
-        # TODO: increase number of workers and set master
-        conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', '1')
-        sc = SparkContext(conf=conf).addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
-        model = SparkModel(model, frequency='epoch')  # Distributed ensemble
+    model = Seq2Seq(model_config)
 
-    model.train_generator(training_generator, validation_generator)
-    model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)
+    if args.ensemble:
+        conf = SparkConf().setAppName('Tardis').setMaster('local[*]').set('spark.executor.instances', '4') #.set('spark.driver.allowMultipleContexts', 'true')
+        # sc = SparkContext.getOrCreate(conf=conf)
+        sc = SparkContext(conf=conf)
+
+        model = SparkModel(model.model, frequency='epoch', mode='asynchronous')  # Distributed ensemble
+
+        # train_pairs = [(x, y) for x, y in zip([encoder_train_input, decoder_train_input], decoder_train_target)]
+        # train_rdd = sc.parallelize(train_pairs, model_config.num_workers)
+
+        train_rdd = to_simple_rdd(sc, [encoder_train_input, decoder_train_input], decoder_train_target)
+
+        # test_pairs = [(x, y) for x, y in zip([encoder_test_input, decoder_test_input], raw_test_target)]
+        # test_rdd = sc.parallelize(test_pairs, model_config.num_workers)
+
+        # TODO: fix - multiple context!
+        model.fit(train_rdd,
+                batch_size=model_config.batch_size,
+                epochs=model_config.epochs,
+                validation_split=0.20,
+                verbose=1)
+
+        sc.stop()
+
+    else:
+        model.train_generator(training_generator, validation_generator)
+        model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)

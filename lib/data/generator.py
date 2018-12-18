@@ -18,7 +18,7 @@ class WMTSequence(Sequence):
         batch_x_encoder = self.x_encoder[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_x_decoder = self.x_decoder[idx * self.batch_size:(idx + 1) * self.batch_size]
         raw_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = np.zeros((raw_y.shape[0], raw_y.shape[1], self.target_vocab_size), dtype=np.float64)
+        batch_y = np.zeros((raw_y.shape[0], raw_y.shape[1], self.target_vocab_size), dtype=np.int64)
 
         for i in range(raw_y.shape[0]):
             for j in range(raw_y.shape[1]):
