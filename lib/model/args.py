@@ -20,7 +20,7 @@ def get_args():
     parser.add_argument('--target-vocab-size', type=int, default=10000)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--decay', type=float, default=0.0)
-    parser.add_argument('--beam-size', type=int, default=2)
+    parser.add_argument('--beam-size', type=int, default=1)
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--dataset', type=str, default='en_vi', choices=['en_de', 'de_en', 'en_vi', 'vi_en'])
     parser.add_argument('--patience', type=int, default=5)
