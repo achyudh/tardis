@@ -13,6 +13,7 @@ from keras.callbacks import ModelCheckpoint
 from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
+
 class Seq2Seq:
     config = None
     model = None
@@ -22,7 +23,7 @@ class Seq2Seq:
 
         if self.config.cpu:
             devices = list('/cpu:' + str(x) for x in (0, 0))
-        if not self.config.cpu:
+        else:
             devices = list('/gpu:' + x for x in config.devices)
 
         # Encoder
@@ -84,7 +85,7 @@ class Seq2Seq:
 
     def train(self, encoder_train_input, decoder_train_input, decoder_train_target):
         checkpoint_filename = \
-            'ep{epoch:02d}_nl%d_ds%d_sv%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
+            'ep{epoch:02d}_el%d_dl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
                                                         self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
                      ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
@@ -98,7 +99,7 @@ class Seq2Seq:
 
     def train_generator(self, training_generator, validation_generator):
         checkpoint_filename = \
-            'ep{epoch:02d}_nl%d_ds%d_sv%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
+            'ep{epoch:02d}_el%d_dl%d_ds%d_sv%d_tv%d.hdf5' % (self.config.num_encoder_layers, self.config.num_decoder_layers, self.config.dataset_size,
                                                         self.config.source_vocab_size, self.config.target_vocab_size)
         callbacks = [lr_scheduler(initial_lr=self.config.lr, decay_factor=self.config.decay),
                      ModelCheckpoint(os.path.join(os.getcwd(), 'data', 'checkpoints', self.config.dataset, checkpoint_filename),
