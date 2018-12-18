@@ -1,18 +1,21 @@
 import os
+import socket
 from copy import deepcopy
+import multiprocessing
 
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
 
 from elephas.spark_model import SparkModel
+from elephas.utils.rdd_utils import to_simple_rdd
 
 from pyspark import SparkContext, SparkConf
 
-from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint
 
 from lib.data import fetch
 from lib.data.generator import WMTSequence
-from lib.model.util import embedding_matrix
+from lib.model.util import embedding_matrix, lr_scheduler
 from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq
@@ -109,11 +112,27 @@ if __name__ == '__main__':
     model = Seq2Seq(model_config)
 
     if args.ensemble:
-        conf = SparkConf().setAppName('Tardis').set('spark.executor.instances', str(args.num_workers)).setMaster('local[*]')
-        sc = SparkContext(conf=conf) # .addFile(path=os.path.join(root_dir, 'dist', 'tardis-0.0.1-py3.6.egg'))
-        model = SparkModel(model.model, frequency='epoch')  # Distributed ensemble
+        # Uncommenting this line produces: "TypeError: can't pickle _thread.lock objects"
+        # Comminting out produces: "OSError: [Errno 48] Address already in use"
+        # multiprocessing.set_start_method('spawn', force=True)
 
-        # TODO: convert input to RDD
+        conf = SparkConf().setAppName('Tardis').setMaster('local[*]').set('spark.executor.instances', str(args.num_workers))
+        sc = SparkContext(conf=conf)
 
-    model.train_generator(training_generator, validation_generator)
-    model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)
+        model = SparkModel(model.model, frequency='epoch') #, mode='asynchronous')  # Distributed ensemble
+
+        train_pairs = [(x, y) for x, y in zip([encoder_train_input, decoder_train_input], decoder_train_target)]
+        train_rdd = sc.parallelize(train_pairs, model_config.num_workers)
+
+        # train_rdd = to_simple_rdd(sc, [encoder_train_input, decoder_train_input], decoder_train_target)
+        # test_rdd = to_simple_rdd(sc, [encoder_test_input, decoder_test_input], raw_test_target)
+
+        model.fit(train_rdd,
+                batch_size=model_config.batch_size,
+                epochs=model_config.epochs,
+                validation_split=0.20,
+                verbose=1)
+
+    else:
+        model.train_generator(training_generator, validation_generator)
+        model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)

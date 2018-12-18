@@ -12,8 +12,9 @@ def get_args():
     parser.add_argument('--epochs', type=int, default=7)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--hidden-dim', type=int, default=1000)
-    parser.add_argument('--num-encoder-layers', type=int, default=4)
-    parser.add_argument('--num-decoder-layers', type=int, default=4)
+    parser.add_argument('--recurrent-unit', type=str, default='lstm')
+    parser.add_argument('--num-encoder-layers', type=int, default=2)
+    parser.add_argument('--num-decoder-layers', type=int, default=2)
     parser.add_argument('--dataset-size', type=int, default=0)
     parser.add_argument('--source-vocab-size', type=int, default=10000)
     parser.add_argument('--target-vocab-size', type=int, default=10000)
@@ -29,7 +30,7 @@ def get_args():
     parser.add_argument('--dataset-path', help='dataset directory', default=os.path.join(root_dir, 'data', 'datasets'))
     parser.add_argument('--word-vectors-file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--weight-decay', type=float, default=0)
-    parser.add_argument('--num-workers', type=int, default=6)
+    parser.add_argument('--num-workers', type=int, default=1)
 
     args = parser.parse_args()
     return args
