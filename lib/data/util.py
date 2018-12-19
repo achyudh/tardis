@@ -1,4 +1,5 @@
 import os
+import re
 
 import dill
 import nltk
@@ -9,18 +10,17 @@ from tqdm import tqdm
 
 
 def preprocess(source_data, target_data):
-    # TODO: Preprocess in one pass
     # Convert to lowercase characters
     source_data = source_data.swifter.apply(lambda x: x.str.lower())
     target_data = target_data.swifter.apply(lambda x: x.str.lower())
 
+    # Remove punctuation
+    # Note: Does not remove underscores
+    source_data = source_data.swifter.apply(lambda x: x.str.replace(r'[^\w\s]', ''))
+    target_data = target_data.swifter.apply(lambda x: x.str.replace(r'[^\w\s]', ''))
+
     # Add SOS and EOS tokens
     target_data = target_data.swifter.apply(lambda x: 'SOS ' + x + ' EOS')
-
-    # Remove punctuation and digits
-    # WARNING: Removes special characters in some languages
-    # source_data = source_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
-    # target_data = target_data.swifter.apply(lambda x: x.str.replace('[^a-zA-Z\s]', ''))
 
     source_data = source_data.values.flatten()
     target_data = target_data.values.flatten()
