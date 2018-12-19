@@ -146,12 +146,8 @@ class Seq2Seq:
             k_beam = sorted(all_hypotheses, key=lambda x: x[0])[-beam_size:]  # Sort by probability
         return k_beam[-1][1]  # Pick hypothesis with highest probability
 
-    def evaluate(self, encoder_predict_input, decoder_predict_input, decoder_train_target):
-        if self.config.beam_size > 0:
-            y_pred = np.apply_along_axis(self.beam_search, 1, encoder_predict_input)
-        else:
-            y_pred = self.predict(encoder_predict_input, decoder_predict_input)
-            y_pred = np.argmax(y_pred, axis=-1)
-        print("BLEU Score:", bleu_score(y_pred, decoder_train_target))
+    def evaluate(self, encoder_predict_input, decoder_predict_target):
+        y_pred = np.apply_along_axis(self.predict, 1, encoder_predict_input)
+        print("BLEU Score:", bleu_score(decoder_predict_target, y_pred))
         # An error in the sacrebleu library prevents multi_bleu_score from working on WMT '14 EN-DE test split
         # print("Multi-BLEU Score", multi_bleu_score(y_pred, self.config.target_vocab, self.config.dataset))

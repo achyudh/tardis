@@ -143,4 +143,4 @@ if __name__ == '__main__':
 
     else:
         model.train_generator(training_generator, validation_generator)
-        model.evaluate(encoder_test_input, decoder_test_input, raw_test_target)
+        model.evaluate(encoder_test_input, raw_test_target)
