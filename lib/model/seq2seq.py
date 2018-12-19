@@ -83,7 +83,8 @@ class Seq2Seq:
             decoder_dense = Dense(config.target_vocab_size, activation='softmax')
             decoder_outputs = decoder_dense(decoder_outputs)
 
-        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        if config.ensemble: self.model = Model(inputs, decoder_outputs)
+        else: self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
         optimizer = Adam(lr=config.lr, clipnorm=25.)
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         print(self.model.summary())
