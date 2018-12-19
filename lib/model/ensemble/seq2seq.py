@@ -1,19 +1,13 @@
-import os
-
 import numpy as np
-import tensorflow as tf
-import keras.backend as K
 from keras.initializers import RandomUniform
-from keras.layers import Input, LSTM, GRU, Embedding, Dense, Lambda
+from keras.layers import Input, LSTM, GRU, Embedding, Dense
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint
-
 from keras.utils.generic_utils import get_custom_objects
 
-from lib.model.metrics import bleu_score
-from lib.model.util import lr_scheduler, TimeHistory
 from lib.model.ensemble.util import EncoderSlice, DecoderSlice
+from lib.model.metrics import bleu_score
+
 
 class Seq2Seq:
     def __init__(self, config):
