@@ -97,7 +97,7 @@ def trim_sentences(sentences):
 
 def reverse_index(indexed_data, vocab, ravel=False):
     reversed_data = list()
-    word_idx = {id: word for word, id in vocab.items()}z
+    word_idx = {id: word for word, id in vocab.items()}
     for indexed_line in indexed_data:
         if ravel:
             reversed_data.append([' '.join((word_idx[x] for x in indexed_line[1:len(indexed_line)-1]))])
