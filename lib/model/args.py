@@ -28,7 +28,6 @@ def get_args():
     parser.add_argument('--embedding-dim', type=int, default=300)
     parser.add_argument('--embedding-path', help='embedding file path', default=os.path.join(root_dir, 'data', 'embeddings'))
     parser.add_argument('--dataset-path', help='dataset directory', default=os.path.join(root_dir, 'data', 'datasets'))
-    parser.add_argument('--word-vectors-file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--weight-decay', type=float, default=0)
     parser.add_argument('--num-workers', type=int, default=1)
 
