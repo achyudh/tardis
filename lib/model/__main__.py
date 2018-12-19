@@ -1,25 +1,21 @@
 import os
 from copy import deepcopy
 
-from keras.backend.tensorflow_backend import set_session
-import tensorflow as tf
-
-from pyspark import SparkConf, SparkContext
-
-from elephas.utils.rdd_utils import to_simple_rdd
-from elephas.spark_model import SparkModel
-
-from keras.callbacks import ModelCheckpoint
-
 import numpy as np
+import tensorflow as tf
+from elephas.spark_model import SparkModel
+from elephas.utils.rdd_utils import to_simple_rdd
+from keras.backend.tensorflow_backend import set_session
+from pyspark import SparkConf, SparkContext
 
 from lib.data import fetch
 from lib.data.generator import WMTSequence
-from lib.model.util import embedding_matrix, lr_scheduler
 from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq
-from lib.model.ensemble import Ensemble
+from lib.model.ensemble.seq2seq import Seq2Seq as EnsembleSeq2Seq
+from lib.model.util import embedding_matrix
+from lib.model.ensemble.util import EncoderSlice, DecoderSlice
 
 if __name__ == '__main__':
     # Select GPU based on args
@@ -106,35 +102,40 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
-    training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
-    validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
-
-    model = Seq2Seq(model_config)
-
     if args.ensemble:
         conf = SparkConf().setAppName('tardis').setMaster('local')
         sc = SparkContext.getOrCreate(conf=conf)
 
-        # TODO: fix
-        train_input = np.hstack((encoder_train_input, decoder_train_input)).flatten()
+        generator_config = deepcopy(args)
+        generator_config.batch_size = 1024
+        generator_config.target_vocab = target_vocab
+        model_config.input_split_index = encoder_train_input.shape[1]
+        training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
 
-        # encoder_padding = np.zeros(encoder_train_input.shape)
-        # decoder_train_target = np.hstack((encoder_padding, decoder_train_target)).flatten()
+        for raw_train_input, decoder_train_target in training_generator:
+            encoder_train_input, decoder_train_input = raw_train_input
+            train_input = np.hstack((encoder_train_input, decoder_train_input))
+            train_rdd = to_simple_rdd(sc, train_input, decoder_train_target)
 
-        train_pairs = [(x, y) for x, y in zip(train_input, decoder_train_target)]
+            model = EnsembleSeq2Seq(model_config)
+            spark_model = SparkModel(model.model,
+                                     frequency='epoch',
+                                     mode='synchronous',
+                                     batch_size=args.batch_size,
+                                     custom_objects={'EncoderSlice': EncoderSlice, 'DecoderSlice': DecoderSlice})
 
-        # TODO: fix OOM for entire collection
-        train_pairs = sc.parallelize(train_pairs)
+            spark_model.fit(train_rdd,
+                            batch_size=model_config.batch_size,
+                            epochs=model_config.epochs,
+                            validation_split=0.0,
+                            verbose=1)
 
-        model = Seq2Seq(model_config)
-        spark_model = SparkModel(model.model, frequenc='epoch', mode='synchronous')
-
-        spark_model.fit(train_pairs,
-                batch_size=model_config.batch_size,
-                epochs=model_config.epochs,
-                validation_split=0.20,
-                verbose=1)
+        model.evaluate(encoder_test_input, raw_test_target)
 
     else:
+        training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
+        validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
+
+        model = Seq2Seq(model_config)
         model.train_generator(training_generator, validation_generator)
         model.evaluate(encoder_test_input, raw_test_target)
