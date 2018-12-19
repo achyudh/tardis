@@ -14,9 +14,6 @@ from lib.model.metrics import bleu_score
 from lib.model.util import lr_scheduler
 
 class Seq2Seq:
-    config = None
-    model = None
-
     def __init__(self, config):
         self.config = config
 
@@ -40,12 +37,6 @@ class Seq2Seq:
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
 
         print(self.model.summary())
-
-    # def __getstate__(self):
-    #     return self.__dict__.copy()
-    #
-    # def __setstate__(self, state):
-    #     self.__dict__.update(state)
 
     def encode(self, encoder_inputs, recurrent_unit='lstm'):
         initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=self.config.seed)
