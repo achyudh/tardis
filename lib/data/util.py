@@ -64,12 +64,12 @@ def build_indices(source_data, target_data, source_vocab, target_vocab, one_hot)
     target_vocab_size = len(target_vocab)
     num_instances = len(source_data)
 
-    encoder_input_data = np.zeros((num_instances, max_source_len), dtype=np.float64)
-    decoder_input_data = np.zeros((num_instances, max_target_len), dtype=np.float64)
+    encoder_input_data = np.zeros((num_instances, max_source_len), dtype=np.int64)
+    decoder_input_data = np.zeros((num_instances, max_target_len), dtype=np.int64)
     if one_hot:
-        decoder_target_data = np.zeros((num_instances, max_target_len, target_vocab_size), dtype=np.float64)
+        decoder_target_data = np.zeros((num_instances, max_target_len, target_vocab_size), dtype=np.int64)
     else:
-        decoder_target_data = np.zeros((num_instances, max_target_len), dtype=np.float64)
+        decoder_target_data = np.zeros((num_instances, max_target_len), dtype=np.int64)
 
     # Convert words to ids
     for i, (source_sent, target_sent) in tqdm(enumerate(zip(source_data, target_data)), total=len(source_data)):
@@ -98,7 +98,6 @@ def trim_sentences(sentences):
 
 def reverse_index(indexed_data, vocab, ravel=False):
     reversed_data = list()
-    indexed_data = np.argmax(indexed_data, axis=-1)
     word_idx = {id: word for word, id in vocab.items()}
     for indexed_line in indexed_data:
         if ravel:

@@ -17,3 +17,5 @@ data/embedings/
 
 # IDE
 .idea/
+
+tardis\.egg-info/
