@@ -15,9 +15,6 @@ from lib.model.util import lr_scheduler, TimeHistory
 
 
 class Seq2Seq:
-    config = None
-    model = None
-
     def __init__(self, config):
         self.config = config
         recurrent_unit = self.config.recurrent_unit.lower()

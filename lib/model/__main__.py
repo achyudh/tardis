@@ -1,19 +1,13 @@
 import os
-import socket
 from copy import deepcopy
-import multiprocessing
-
-import time
 
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
 
-from elephas.spark_model import SparkModel
-from elephas.utils.rdd_utils import to_simple_rdd
-
-from contextlib import contextmanager
 from pyspark import SparkConf, SparkContext
-from pyspark.sql import SparkSession
+
+from elephas.utils.rdd_utils import to_simple_rdd
+from elephas.spark_model import SparkModel
 
 from keras.callbacks import ModelCheckpoint
 
@@ -118,28 +112,25 @@ if __name__ == '__main__':
     model = Seq2Seq(model_config)
 
     if args.ensemble:
-        conf = SparkConf().setAppName('Tardis').setMaster('local[*]').set('spark.executor.instances', '4') #.set('spark.driver.allowMultipleContexts', 'true')
-        # sc = SparkContext.getOrCreate(conf=conf)
-        sc = SparkContext(conf=conf)
+        conf = SparkConf().setAppName('tardis').setMaster('local')
+        sc = SparkContext.getOrCreate(conf=conf)
 
-        model = SparkModel(model.model, frequency='epoch', mode='asynchronous')  # Distributed ensemble
+        # TODO: fix
+        train_input = np.dstack((encoder_train_input, decoder_train_input))
+        rdd = to_simple_rdd(sc, train_input, decoder_train_target)
 
-        # train_pairs = [(x, y) for x, y in zip([encoder_train_input, decoder_train_input], decoder_train_target)]
-        # train_rdd = sc.parallelize(train_pairs, model_config.num_workers)
+        encoder_train_rdd = sc.parallelize(encoder_train_input)
+        decoder_train_rdd = sc.parallelize(decoder_train_input)
+        decoder_train_target = sc.parallelize(decoder_train_target)
 
-        train_rdd = to_simple_rdd(sc, [encoder_train_input, decoder_train_input], decoder_train_target)
+        model = Seq2Seq(model_config)
+        spark_model = SparkModel(model.model, frequenc='epoch', mode='synchronous')
 
-        # test_pairs = [(x, y) for x, y in zip([encoder_test_input, decoder_test_input], raw_test_target)]
-        # test_rdd = sc.parallelize(test_pairs, model_config.num_workers)
-
-        # TODO: fix - multiple context!
-        model.fit(train_rdd,
+        spark_model.fit(train_rdd,
                 batch_size=model_config.batch_size,
                 epochs=model_config.epochs,
                 validation_split=0.20,
                 verbose=1)
-
-        sc.stop()
 
     else:
         model.train_generator(training_generator, validation_generator)
