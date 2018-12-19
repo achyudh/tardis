@@ -99,6 +99,7 @@ def reverse_index(indexed_data, vocab, ravel=False):
     reversed_data = list()
     indexed_data = np.argmax(indexed_data, axis=-1)
     word_idx = {id: word for word, id in vocab.items()}
+    if isinstance(indexed_data, np.ndarray): indexed_data = indexed_data.tolist()
     for indexed_line in indexed_data:
         if ravel:
             reversed_data.append([' '.join((word_idx[x] for x in indexed_line[1:len(indexed_line)-1]))])
