@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from keras.initializers import RandomUniform
-from keras.layers import Input, LSTM, GRU, Embedding, Dense
+from keras.layers import Input, LSTM, GRU, Embedding, Dense, Lambda, Reshape
 from keras.models import Model
 from keras.losses import categorical_crossentropy
 from keras.optimizers import Adam
@@ -23,17 +23,35 @@ class Seq2Seq:
         else:
             devices = list('/gpu:' + x for x in config.devices)
 
-        # Encoder
-        with tf.device(devices[0]):
-            encoder_inputs = Input(shape=(None, ))
+        if self.config.ensemble:
+            inputs = Input(shape=(None,))
+            reconstructed_inputs = Reshape((128,), input_shape=(self.config.dataset_size,))(inputs)
+            # TODO: set indices dynamically
+            encoder_inputs = Lambda(lambda x: x[:, :50])(reconstructed_inputs)
             encoder_states = self.encode(encoder_inputs, recurrent_unit=self.config.recurrent_unit)
-        # Decoder
-        with tf.device(devices[1]):
-            decoder_inputs = Input(shape=(None, ))
+
+            decoder_inputs = Lambda(lambda x: x[:, 50:])(reconstructed_inputs)
+
             decoder_outputs = self.decode(decoder_inputs, encoder_states, recurrent_unit=self.config.recurrent_unit)
 
+            # decoder_reshape = Reshape((128, self.config.target_vocab_size)) #?
+            # decoder_slice = Lambda(lambda x: x[:, 50:, :])
+
+            # decoder_outputs = decoder_reshape(decoder_outputs)
+            # decoder_outputs = decoder_slice(decoder_outputs)
+        else:
+            # Encoder
+            with tf.device(devices[0]):
+                encoder_inputs = Input(shape=(None, ))
+                encoder_states = self.encode(encoder_inputs, recurrent_unit=self.config.recurrent_unit)
+            # Decoder
+            with tf.device(devices[1]):
+                decoder_inputs = Input(shape=(None, ))
+                decoder_outputs = self.decode(decoder_inputs, encoder_states, recurrent_unit=self.config.recurrent_unit)
+
         # Input: Source and target sentence, Output: Predicted translation
-        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        # self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        self.model = Model(inputs, decoder_outputs)
         optimizer = Adam(lr=self.config.lr, clipnorm=25.)
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
 

@@ -98,6 +98,7 @@ def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk
     encoder_input_data, decoder_input_data, decoder_target_data = build_indices(source_data, target_data, source_vocab,
                                                                                 target_vocab, one_hot)
 
+
     if splits.lower() == 'test':
         return encoder_input_data, decoder_input_data, decoder_target_data, raw_target_data, source_vocab, target_vocab
     else:
