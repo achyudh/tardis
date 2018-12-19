@@ -36,13 +36,12 @@ if __name__ == '__main__':
     if not args.cpu:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        config.log_device_placement = True
+        config.log_device_placement = False
         sess = tf.Session(config=config)
 
         set_session(sess)
-
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.devices
 
     if args.dataset == 'en_de':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
