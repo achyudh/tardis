@@ -116,17 +116,20 @@ if __name__ == '__main__':
         sc = SparkContext.getOrCreate(conf=conf)
 
         # TODO: fix
-        train_input = np.dstack((encoder_train_input, decoder_train_input))
-        rdd = to_simple_rdd(sc, train_input, decoder_train_target)
+        train_input = np.hstack((encoder_train_input, decoder_train_input)).flatten()
 
-        encoder_train_rdd = sc.parallelize(encoder_train_input)
-        decoder_train_rdd = sc.parallelize(decoder_train_input)
-        decoder_train_target = sc.parallelize(decoder_train_target)
+        # encoder_padding = np.zeros(encoder_train_input.shape)
+        # decoder_train_target = np.hstack((encoder_padding, decoder_train_target)).flatten()
+
+        train_pairs = [(x, y) for x, y in zip(train_input, decoder_train_target)]
+
+        # TODO: fix OOM for entire collection
+        train_pairs = sc.parallelize(train_pairs)
 
         model = Seq2Seq(model_config)
         spark_model = SparkModel(model.model, frequenc='epoch', mode='synchronous')
 
-        spark_model.fit(train_rdd,
+        spark_model.fit(train_pairs,
                 batch_size=model_config.batch_size,
                 epochs=model_config.epochs,
                 validation_split=0.20,

@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import keras.backend as K
 from keras.initializers import RandomUniform
-from keras.layers import Input, LSTM, GRU, Embedding, Dense
+from keras.layers import Input, LSTM, GRU, Embedding, Dense, Lambda, Reshape
 from keras.models import Model
 from keras.losses import categorical_crossentropy
 from keras.optimizers import Adam
@@ -24,11 +24,18 @@ class Seq2Seq:
         else:
             devices = list('/gpu:' + x for x in config.devices)
 
+        if config.ensemble:
+            inputs = Input(shape=(None,))
+            # TODO: set indices dynamically
+            reconstructed_inputs = Reshape((128,), input_shape=(config.dataset_size,))(inputs)
+            encoder_inputs = Lambda(lambda x: x[:, :50])(reconstructed_inputs)
+            decoder_inputs = Lambda(lambda x: x[:, 50:])(reconstructed_inputs)
+
         with tf.device(devices[0]):
             initial_weights = RandomUniform(minval=-0.08, maxval=0.08, seed=config.seed)
-            encoder_inputs = Input(shape=(None,))
             encoder_embedding = Embedding(config.source_vocab_size, config.embedding_dim,
                                           weights=[config.source_embedding_map], trainable=False)
+            if not config.ensemble: encoder_inputs = Input(shape=(None, ))
             encoder_embedded = encoder_embedding(encoder_inputs)
 
             if recurrent_unit == 'lstm':
@@ -47,7 +54,7 @@ class Seq2Seq:
                 encoder_states = [state_h]
 
         with tf.device(devices[1]):
-            decoder_inputs = Input(shape=(None,))
+            if not config.ensemble: decoder_inputs = Input(shape=(None, ))
             decoder_embedding = Embedding(config.target_vocab_size, config.embedding_dim,
                                           weights=[config.target_embedding_map], trainable=False)
             decoder_embedded = decoder_embedding(decoder_inputs)
@@ -67,10 +74,17 @@ class Seq2Seq:
                         decoder)  # Use the final encoder state as context
                 decoder_outputs, decoder_states = decoder[0], decoder[1]
 
+            # if config.ensemble:
+            #     decoder_reshape = Reshape((128, self.config.target_vocab_size)) #?
+            #     decoder_slice = Lambda(lambda x: x[:, 50:, :])
+            #     decoder_outputs = decoder_reshape(decoder_outputs)
+            #     decoder_outputs = decoder_slice(decoder_outputs)
+
             decoder_dense = Dense(config.target_vocab_size, activation='softmax')
             decoder_outputs = decoder_dense(decoder_outputs)
 
-        self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+        if config.ensemble: self.model = Model(inputs, decoder_outputs)
+        else: self.model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
         optimizer = Adam(lr=config.lr, clipnorm=25.)
         self.model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         print(self.model.summary())
