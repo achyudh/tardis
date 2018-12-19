@@ -97,7 +97,6 @@ def trim_sentences(sentences):
 
 def reverse_index(indexed_data, vocab, ravel=False):
     reversed_data = list()
-    indexed_data = np.argmax(indexed_data, axis=-1)
     word_idx = {id: word for word, id in vocab.items()}
     for indexed_line in indexed_data:
         if ravel:
