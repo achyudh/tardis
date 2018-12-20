@@ -10,6 +10,7 @@ def get_args():
     parser.add_argument('--devices', type=str, default='0,1')
     parser.add_argument('--ensemble', action='store_true')
     parser.add_argument('--distributed', action='store_true')
+    parser.add_argument('--local-worker', action='store_true')
     parser.add_argument('--epochs', type=int, default=7)
     parser.add_argument('--num-models', type=int, default=2)
     parser.add_argument('--batch-size', type=int, default=32)

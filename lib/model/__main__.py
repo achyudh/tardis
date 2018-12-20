@@ -14,6 +14,7 @@ from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq, EnsembleSeq2Seq
 from lib.model.distributed.seq2seq import Seq2Seq as DistributedSeq2Seq
+from lib.model.distributed.seq2seq import EnsembleSeq2Seq as DistributedEnsembleSeq2Seq
 from lib.model.util import embedding_matrix, load_weights
 from lib.model.distributed.util import EncoderSlice, DecoderSlice
 
@@ -103,7 +104,10 @@ if __name__ == '__main__':
     model_config.target_embedding_map = target_embedding_map
 
     if args.distributed:
-        conf = SparkConf().setAppName('tardis').setMaster('local')
+        if args.local_worker:
+            conf = SparkConf().setAppName('tardis').setMaster('local')
+        else:
+            conf = SparkConf().setAppName('tardis').setMaster('local[*]')
         sc = SparkContext.getOrCreate(conf=conf)
 
         generator_config = deepcopy(args)
@@ -117,7 +121,11 @@ if __name__ == '__main__':
             train_input = np.hstack((encoder_train_input, decoder_train_input))
             train_rdd = to_simple_rdd(sc, train_input, decoder_train_target)
 
-            model = DistributedSeq2Seq(model_config)
+            if args.ensemble:
+                model = DistributedEnsembleSeq2Seq(model_config)
+            else:
+                model = DistributedSeq2Seq(model_config)
+
             spark_model = SparkModel(model.model,
                                      frequency='epoch',
                                      mode='synchronous',
@@ -143,6 +151,5 @@ if __name__ == '__main__':
 
         if args.load_checkpoint:
             load_weights(model.model, args.checkpoint_path)
-
         model.train_generator(training_generator, validation_generator)
         model.evaluate(encoder_test_input, raw_test_target)
