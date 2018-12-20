@@ -5,7 +5,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.utils.generic_utils import get_custom_objects
 
-from lib.model.ensemble.util import EncoderSlice, DecoderSlice
+from lib.model.distributed.util import EncoderSlice, DecoderSlice
 from lib.model.metrics import bleu_score
 
 
