@@ -104,7 +104,7 @@ if __name__ == '__main__':
     model_config.target_embedding_map = target_embedding_map
 
     if args.distributed:
-        if args.local_worker:
+        if args.single_threaded_worker:
             conf = SparkConf().setAppName('tardis').setMaster('local')
         else:
             conf = SparkConf().setAppName('tardis').setMaster('local[*]')
