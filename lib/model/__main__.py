@@ -12,10 +12,10 @@ from lib.data import fetch
 from lib.data.generator import WMTSequence
 from lib.model import metrics
 from lib.model.args import get_args
-from lib.model.seq2seq import Seq2Seq
-from lib.model.ensemble.seq2seq import Seq2Seq as EnsembleSeq2Seq
+from lib.model.seq2seq import Seq2Seq, EnsembleSeq2Seq
+from lib.model.distributed.seq2seq import Seq2Seq as DistributedSeq2Seq
 from lib.model.util import embedding_matrix, load_weights
-from lib.model.ensemble.util import EncoderSlice, DecoderSlice
+from lib.model.distributed.util import EncoderSlice, DecoderSlice
 
 if __name__ == '__main__':
     # Select GPU based on args
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
 
-    if args.ensemble:
+    if args.distributed:
         conf = SparkConf().setAppName('tardis').setMaster('local')
         sc = SparkContext.getOrCreate(conf=conf)
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             train_input = np.hstack((encoder_train_input, decoder_train_input))
             train_rdd = to_simple_rdd(sc, train_input, decoder_train_target)
 
-            model = EnsembleSeq2Seq(model_config)
+            model = DistributedSeq2Seq(model_config)
             spark_model = SparkModel(model.model,
                                      frequency='epoch',
                                      mode='synchronous',
@@ -136,7 +136,11 @@ if __name__ == '__main__':
         training_generator = WMTSequence(encoder_train_input, decoder_train_input, decoder_train_target, model_config)
         validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
-        model = Seq2Seq(model_config)
+        if args.ensemble:
+            model = EnsembleSeq2Seq(model_config)
+        else:
+            model = Seq2Seq(model_config)
+
         if args.load_checkpoint:
             load_weights(model.model, args.checkpoint_path)
 
