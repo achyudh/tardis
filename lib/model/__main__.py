@@ -14,7 +14,7 @@ from lib.model import metrics
 from lib.model.args import get_args
 from lib.model.seq2seq import Seq2Seq
 from lib.model.ensemble.seq2seq import Seq2Seq as EnsembleSeq2Seq
-from lib.model.util import embedding_matrix
+from lib.model.util import embedding_matrix, load_weights
 from lib.model.ensemble.util import EncoderSlice, DecoderSlice
 
 if __name__ == '__main__':
@@ -137,5 +137,8 @@ if __name__ == '__main__':
         validation_generator = WMTSequence(encoder_dev_input, decoder_dev_input, decoder_dev_target, model_config)
 
         model = Seq2Seq(model_config)
+        if args.load_checkpoint:
+            load_weights(model.model, args.checkpoint_path)
+
         model.train_generator(training_generator, validation_generator)
         model.evaluate(encoder_test_input, raw_test_target)

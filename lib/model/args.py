@@ -24,7 +24,9 @@ def get_args():
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--dataset', type=str, default='en_vi', choices=['en_de', 'de_en', 'en_vi', 'vi_en'])
     parser.add_argument('--patience', type=int, default=5)
-    parser.add_argument('--save-path', type=str, default='data/checkpoints')
+    parser.add_argument('--load-checkpoint', action='store_true')
+    parser.add_argument('--checkpoint-path', type=str, default=os.path.join(root_dir, 'data', 'checkpoints', 'en_vi',
+                                                                            'lstm_el2_dl2_ds0_sv10000_tv10000_ep01.hdf5'))
     parser.add_argument('--embedding-dim', type=int, default=300)
     parser.add_argument('--embedding-path', help='embedding file path', default=os.path.join(root_dir, 'data', 'embeddings'))
     parser.add_argument('--dataset-path', help='dataset directory', default=os.path.join(root_dir, 'data', 'datasets'))
