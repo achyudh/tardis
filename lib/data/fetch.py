@@ -53,10 +53,10 @@ def en_de(path, source_vocab=None, target_vocab=None, reverse_lang=False, replac
         return encoder_input_data, decoder_input_data, decoder_target_data, source_vocab, target_vocab
 
 
-def en_vi(path, source_vocab=None, target_vocab=None, reverse=False, replace_unk=True, one_hot=False,
+def en_vi(path, source_vocab=None, target_vocab=None, reverse_lang=False, replace_unk=True, one_hot=False,
           dataset_size=None, source_vocab_size=None, target_vocab_size=None, splits='train'):
 
-    if reverse:
+    if reverse_lang:
         source_lang, target_lang = 'vi', 'en'
     else:
         source_lang, target_lang = 'en', 'vi'
