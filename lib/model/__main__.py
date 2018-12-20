@@ -36,7 +36,9 @@ if __name__ == '__main__':
 
     if args.dataset == 'en_de':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
+            fetch.en_de(args.dataset_path,
+                        dataset_size=args.dataset_size,
+                        source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, splits='dev')
@@ -48,8 +50,11 @@ if __name__ == '__main__':
 
     elif args.dataset == 'de_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_de(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
-                        target_vocab_size=args.target_vocab_size, reverse_lang=True)
+            fetch.en_de(args.dataset_path,
+                        reverse_lang=True,
+                        dataset_size=args.dataset_size,
+                        source_vocab_size=args.source_vocab_size,
+                        target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_de(args.dataset_path, source_vocab, target_vocab, reverse_lang=True, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, raw_test_target, source_vocab, target_vocab = \
@@ -60,7 +65,9 @@ if __name__ == '__main__':
 
     elif args.dataset == 'en_vi':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
+            fetch.en_vi(args.dataset_path,
+                        dataset_size=args.dataset_size,
+                        source_vocab_size=args.source_vocab_size,
                         target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
             fetch.en_vi(args.dataset_path, source_vocab, target_vocab, splits='dev')
@@ -72,12 +79,15 @@ if __name__ == '__main__':
 
     elif args.dataset == 'vi_en':
         encoder_train_input, decoder_train_input, decoder_train_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, dataset_size=args.dataset_size, source_vocab_size=args.source_vocab_size,
-                        target_vocab_size=args.target_vocab_size, reverse=True)
+            fetch.en_vi(args.dataset_path,
+                        reverse_lang=True,
+                        dataset_size=args.dataset_size,
+                        source_vocab_size=args.source_vocab_size,
+                        target_vocab_size=args.target_vocab_size)
         encoder_dev_input, decoder_dev_input, decoder_dev_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, source_vocab, target_vocab, reverse=True, splits='dev')
+            fetch.en_vi(args.dataset_path, source_vocab, target_vocab, reverse_lang=True, splits='dev')
         encoder_test_input, decoder_test_input, decoder_test_target, raw_test_target, source_vocab, target_vocab = \
-            fetch.en_vi(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse=True, splits='test')
+            fetch.en_vi(args.dataset_path, source_vocab, target_vocab, one_hot=True, reverse_lang=True, splits='test')
 
         source_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.vi.vec'), source_vocab)
         target_embedding_map = embedding_matrix(os.path.join(args.embedding_path, 'wiki.en.vec'), target_vocab)
@@ -92,16 +102,19 @@ if __name__ == '__main__':
     model_config = deepcopy(args)
     source_vocab_size = len(source_vocab)
     target_vocab_size = len(target_vocab)
+    max_target_len = max(x.shape[1] for x in (decoder_train_target, decoder_dev_target, decoder_test_target))
     if ',' in args.devices:
         model_config.devices = args.devices.split(',')
     else:
         model_config.devices = (args.devices, args.devices)
+
     model_config.source_vocab = source_vocab
     model_config.target_vocab = target_vocab
     model_config.source_vocab_size = source_vocab_size
     model_config.target_vocab_size = target_vocab_size
     model_config.source_embedding_map = source_embedding_map
     model_config.target_embedding_map = target_embedding_map
+    model_config.max_target_len = max_target_len
 
     if args.distributed:
         if args.single_threaded_worker:
