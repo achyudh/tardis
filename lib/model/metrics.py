@@ -18,7 +18,20 @@ def bleu_score(reference, candidate, log_outputs=True):
         with open('%s_output.json' % DATASET, 'w') as json_file:
             json.dump(list(zip(reference, candidate)), json_file)
     reference = [[x] for x in reference]
-    return corpus_bleu(reference, candidate, smoothing_function=SmoothingFunction().method4)
+
+    bleu_m4 = 0
+    try:
+        bleu_m4 = corpus_bleu(reference, candidate, smoothing_function=SmoothingFunction().method4)
+    except Exception as e:
+        print(e)
+
+    bleu_m5 = 0
+    try:
+        bleu_m5 = corpus_bleu(reference, candidate, smoothing_function=SmoothingFunction().method5)
+    except Exception as e:
+        print(e)
+
+    return bleu_m4, bleu_m5
 
 
 def multi_bleu_score(candidate, target_vocab):
