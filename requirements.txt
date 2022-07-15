@@ -13,7 +13,7 @@ dask==1.0.0
 decorator==4.3.0
 defusedxml==0.5.0
 dill==0.2.8.2
-distributed==1.25.1
+distributed==2021.10.0
 elephas==0.4
 entrypoints==0.2.3
 Flask==1.0.2
